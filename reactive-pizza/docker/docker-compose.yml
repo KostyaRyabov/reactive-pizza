@@ -1,24 +1,25 @@
 version: '3.1'
-
 services:
   elasticsearch:
-    image: elasticsearch:7.9.3
+    image: 'elasticsearch:7.9.3'
     environment:
       discovery.type: single-node
     ports:
-      - 9200:9200
-
+      - '9200:9200'
   zookeeper-pizza:
     image: wurstmeister/zookeeper
     ports:
-      - "2181:2181"
-
+      - '2181:2181'
+    ulimits:
+        nofile:
+            soft: "65536"
+            hard: "65536"
   kafka-pizza:
     image: wurstmeister/kafka
     ports:
-      - "9092:9092"
+      - '9092:9092'
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 192.168.1.46
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-pizza:2181
+      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-pizza:2181'
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - '/var/run/docker.sock:/var/run/docker.sock'

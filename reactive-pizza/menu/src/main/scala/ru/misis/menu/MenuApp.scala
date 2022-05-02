@@ -5,18 +5,18 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
-import ru.misis.menu.routes.MenuRoutes
-import ru.misis.menu.service.{MenuCommandImpl, MenuEventProcessing}
+import ru.misis.menu.routes.{CartRoutes, MenuRoutes}
+import ru.misis.menu.service.{CartCommandImpl, CartEventProcessing, MenuCommandImpl, MenuEventProcessing}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 import scala.util.Success
 
 object MenuApp {
-  private def startHttpServer(routes: Route)(implicit system: ActorSystem): Unit = {
+  private def startHttpServer(routes: Route, port: Int = 8080)(implicit system: ActorSystem): Unit = {
     import system.dispatcher
 
-    val futureBinding = Http().newServerAt("localhost", 8080).bind(routes)
+    val futureBinding = Http().newServerAt("localhost", port).bind(routes)
     futureBinding.onComplete {
       case Success(binding) =>
         val address = binding.localAddress
@@ -32,10 +32,15 @@ object MenuApp {
 
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("HelloAkkaHttpServer")
-    val menuCommands = new MenuCommandImpl(elastic)
-    val routes = new MenuRoutes(menuCommands)
-    val menuEventProcessing = new MenuEventProcessing(menuCommands)
-    startHttpServer(routes.routes)
 
+    val menuCommands = new MenuCommandImpl(elastic)
+    val menuRoutes = new MenuRoutes(menuCommands)
+    val menuEventProcessing = new MenuEventProcessing(menuCommands)
+    startHttpServer(menuRoutes.routes)
+
+    val cartCommands = new CartCommandImpl(elastic)
+    val cartRoutes = new CartRoutes(cartCommands)
+    val cartEventProcessing = new CartEventProcessing(cartCommands)
+    startHttpServer(cartRoutes.routes, 8081)
   }
 }

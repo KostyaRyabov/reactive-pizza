@@ -7,11 +7,60 @@ GET http://localhost:8080/item/sdfsadf
 Content-Type: application/json
 
 ###
-GET http://localhost:8080/find/сладкий зелёный голубой
+GET http://localhost:8080/find/гурцы нарезать солом
 Content-Type: application/json
 
 ###
 POST http://localhost:8080/publish
 Content-Type: application/json
 
-["7c89c3cb-8f6d-4b7d-925a-f9263991cd20", "b1a4a4c2-feb6-485f-b8de-9508a0aabb47", "89f92b62-1a84-4a63-913d-42cfac01faf4", "052fe095-39a2-4dc7-b075-5ad2d8c8276f", "5c0aee9e-c789-42ce-9d5b-38fedb85ea71"]
+[
+  "73deec2f-627a-4f0a-a17f-afc9ee8cfede"
+]
+
+###
+GET http://localhost:8081/menu
+Content-Type: application/json
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "item_id": "<item_id>",
+  "amount": 2
+}
+
+###
+PUT http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "item_id": "<item_id>",
+  "amount": 10
+}
+
+###
+PUT http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "item_id": "<item_id>",
+  "amount": 0
+}
+
+###
+GET http://localhost:8081/carts/<cart_id>
+Content-Type: application/json
+
+###
+DELETE http://localhost:8081/carts/<cart_id>
+Content-Type: application/json
+
+###
+DELETE http://localhost:8081/carts/<cart_id>/items/<item_id>
+Content-Type: application/json
+
+###
+GET http://localhost:8081/carts/<cart_id>/pay
+Content-Type: application/json

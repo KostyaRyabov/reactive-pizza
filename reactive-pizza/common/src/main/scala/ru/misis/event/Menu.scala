@@ -22,7 +22,7 @@ object Menu {
                           products: Seq[Product],
                           duration: Int)
 
-    case class Product(name: String, amount: Int)
+    case class Product(name: String, amount: Double)
 
 
     case class MenuCreated(menu: Menu) extends Event
