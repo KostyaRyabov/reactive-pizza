@@ -40,10 +40,6 @@ class MenuEventProcessing (menuService: MenuCommands)
         }
         .runWith(Sink.ignore)
 
-    kafkaSource[MenuCreated]
-        .wireTap(value => logger.info(s"Menu created ${value.toJson.prettyPrint}"))
-        .runWith(Sink.ignore)
-
     kafkaSource[RouteCardCreated]
         .wireTap(value => logger.info(s"RouteCard created ${value.toJson.prettyPrint}"))
         .runWith(Sink.ignore)

@@ -15,7 +15,8 @@ object EventJsonFormats {
     implicit val menuCreatedFormat = jsonFormat1(MenuCreated)
     implicit val routeCardCreatedFormat = jsonFormat1(RouteCardCreated)
 
-    implicit val cartItemFormat = jsonFormat3(Cart.Item)
+    implicit val cartItemDTOFormat = jsonFormat2(Cart.ItemDTO)
+    implicit val cartAppendItemFormat = jsonFormat3(Cart.Item)
     implicit val cartItemDataFormat = jsonFormat5(Cart.ItemData)
 
     implicit val cartItemInfoFormat = jsonFormat4(Cart.ItemInfo)

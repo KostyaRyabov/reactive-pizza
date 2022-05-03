@@ -15,7 +15,8 @@ POST http://localhost:8080/publish
 Content-Type: application/json
 
 [
-  "73deec2f-627a-4f0a-a17f-afc9ee8cfede"
+  "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
+  "392e3254-b730-437e-899b-bcaf4b396fe0"
 ]
 
 ###
@@ -27,8 +28,18 @@ POST http://localhost:8081/carts
 Content-Type: application/json
 
 {
-  "item_id": "<item_id>",
+  "itemId": "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
   "amount": 2
+}
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "0dd5e063-4a03-4a30-b975-884456c63554",
+  "itemId": "392e3254-b730-437e-899b-bcaf4b396fe0",
+  "amount": 1
 }
 
 ###
@@ -36,7 +47,8 @@ PUT http://localhost:8081/carts
 Content-Type: application/json
 
 {
-  "item_id": "<item_id>",
+  "cartId": "0dd5e063-4a03-4a30-b975-884456c63554",
+  "itemId": "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
   "amount": 10
 }
 
@@ -45,22 +57,23 @@ PUT http://localhost:8081/carts
 Content-Type: application/json
 
 {
-  "item_id": "<item_id>",
+  "cartId": "0dd5e063-4a03-4a30-b975-884456c63554",
+  "itemId": "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
   "amount": 0
 }
 
 ###
-GET http://localhost:8081/carts/<cart_id>
+GET http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554
 Content-Type: application/json
 
 ###
-DELETE http://localhost:8081/carts/<cart_id>
+DELETE http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554
 Content-Type: application/json
 
 ###
-DELETE http://localhost:8081/carts/<cart_id>/items/<item_id>
+DELETE http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554/items/63f8b0b5-659d-48ea-968a-7b8a0eb15077
 Content-Type: application/json
 
 ###
-GET http://localhost:8081/carts/<cart_id>/pay
+GET http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554/pay
 Content-Type: application/json

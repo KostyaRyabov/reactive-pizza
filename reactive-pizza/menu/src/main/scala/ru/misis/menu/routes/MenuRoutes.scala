@@ -14,8 +14,6 @@ import ru.misis.menu.model.ModelJsonFormats._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._
 
-import java.util.UUID
-
 class MenuRoutes(menuService: MenuCommands)(implicit val system: ActorSystem){
 
     implicit val itemDTOJsonFormat = jsonFormat5(ItemDTO)

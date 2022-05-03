@@ -23,3 +23,23 @@ Content-Type: application/json
     }
   }
 }
+
+###
+GET localhost:9200/cart/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+###
+GET localhost:9200/menu/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "match_all": {}
+  }
+}

@@ -12,6 +12,11 @@ object Cart {
                    amount: Int,
                  )
 
+  case class ItemDTO(
+                      itemId: String,
+                      amount: Int,
+                    )
+
   // for storing:
 
   case class ItemData(
