@@ -1,25 +1,26 @@
-package ru.misis.cart
+package ru.misis.orders
 
 import akka.actor.ActorSystem
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
-import ru.misis.cart.routes.CartRoutes
-import ru.misis.cart.service.{CartCommandsImpl, CartEventProcessing}
+import ru.misis.orders.routes.OrderRoutes
+import ru.misis.orders.service.OrderCommandsImpl
+import ru.misis.payment.routes.PaymentRoutes
+import ru.misis.payment.service.PaymentCommandsImpl
 import ru.misis.util.HttpServer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object CartApp {
+object OrdersApp {
   val props = ElasticProperties("http://localhost:9200")
   val elastic = ElasticClient(JavaClient(props))
 
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("HelloAkkaHttpServer")
 
-    val cartCommands = new CartCommandsImpl(elastic)
-    val cartRoutes = new CartRoutes(cartCommands)
-    val cartEventProcessing = new CartEventProcessing(cartCommands)
-    val server = new HttpServer("Cart", cartRoutes.routes, 8081)
+    val orderCommands = new OrderCommandsImpl(elastic)
+    val orderRoutes = new OrderRoutes(orderCommands)
+    val server = new HttpServer("Orders", orderRoutes.routes, 8083)
     server.start()
   }
 }

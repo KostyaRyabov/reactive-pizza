@@ -2,14 +2,14 @@ package ru.misis.payment.service
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.Sink
 import com.sksamuel.elastic4s.ElasticApi.{createIndex, deleteIndex, properties}
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.requests.indexes.IndexResponse
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
 import ru.misis.event.Cart._
-import ru.misis.event.EventJsonFormats.{orderFormedFormat, paymentConfirmedFormat}
+import ru.misis.event.EventJsonFormats.paymentConfirmedFormat
+import ru.misis.event.Order.OrderFormed
 import ru.misis.event.Payment.PaymentConfirmed
 import ru.misis.payment.model.PaymentJsonFormats._
 import ru.misis.payment.model.{Bill, PaymentCommands}
@@ -44,15 +44,11 @@ class PaymentCommandsImpl(
       )
     )
 
-  kafkaSource[OrderFormed]
-    .wireTap(createBill(_))
-    .runWith(Sink.ignore)
-
   private def calculatePrice(cart: CartInfo): Double = cart.items.map(calculatePrice).sum
 
   private def calculatePrice(item: ItemInfo): Double = item.price * item.amount
 
-  private def createBill: OrderFormed => Future[Bill] = {
+  override def create: OrderFormed => Future[Bill] = {
     case OrderFormed(cart) =>
       logger.info(s"Preparing bill for payment...")
 

@@ -2,28 +2,33 @@ package ru.misis.event
 
 import ru.misis.event.Cart._
 import ru.misis.event.Menu._
+import ru.misis.event.Order.{OrderConfirmed, OrderFormed}
 import ru.misis.event.Payment._
 import spray.json.DefaultJsonProtocol._
 
 object EventJsonFormats {
-    implicit val productJsonFormat = jsonFormat2(Product)
-    implicit val stageJsonFormat = jsonFormat4(RouteStage)
-    implicit val stageItemJsonFormat = jsonFormat2(RouteItem)
-    implicit val menuItemJsonFormat = jsonFormat4(MenuItem)
+  implicit val productJsonFormat = jsonFormat2(Product)
+  implicit val stageJsonFormat = jsonFormat4(RouteStage)
+  implicit val stageItemJsonFormat = jsonFormat2(RouteItem)
+  implicit val menuItemJsonFormat = jsonFormat4(MenuItem)
 
-    implicit val menuCategoryFormat = jsonFormat2(MenuCategory)
-    implicit val menuFormat = jsonFormat1(Menu)
+  implicit val menuCategoryFormat = jsonFormat2(MenuCategory)
+  implicit val menuFormat = jsonFormat1(Menu)
 
-    implicit val menuCreatedFormat = jsonFormat1(MenuCreated)
-    implicit val routeCardCreatedFormat = jsonFormat1(RouteCardCreated)
+  implicit val menuCreatedFormat = jsonFormat1(MenuCreated)
+  implicit val routeCardCreatedFormat = jsonFormat1(RouteCardCreated)
 
-    implicit val cartItemDTOFormat = jsonFormat2(ItemDTO)
-    implicit val cartAppendItemFormat = jsonFormat3(Item)
-    implicit val cartItemDataFormat = jsonFormat5(ItemData)
+  implicit val cartItemDTOFormat = jsonFormat2(ItemDTO)
+  implicit val cartAppendItemFormat = jsonFormat3(Item)
+  implicit val cartItemDataFormat = jsonFormat5(ItemData)
 
-    implicit val cartItemInfoFormat = jsonFormat4(ItemInfo)
-    implicit val cartInfoFormat = jsonFormat2(CartInfo)
-    implicit val orderFormedFormat = jsonFormat1(OrderFormed)
+  implicit val cartItemInfoFormat = jsonFormat4(ItemInfo)
+  implicit val cartInfoFormat = jsonFormat2(CartInfo)
 
-    implicit val paymentConfirmedFormat = jsonFormat1(PaymentConfirmed)
+  implicit val paymentConfirmedFormat = jsonFormat1(PaymentConfirmed)
+
+  implicit val orderItemFormat = jsonFormat5(Order.Item.apply)
+  implicit val orderFormat = jsonFormat2(Order.apply)
+  implicit val orderFormedFormat = jsonFormat1(OrderFormed)
+  implicit val orderConfirmedFormat = jsonFormat1(OrderConfirmed)
 }

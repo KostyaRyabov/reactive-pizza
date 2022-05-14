@@ -41,6 +41,4 @@ object Cart {
                        items: Seq[ItemInfo],
                      )
 
-  case class OrderFormed(cart: CartInfo) extends Event
-
 }

@@ -18,7 +18,7 @@ object PaymentApp {
 
     val paymentCommands = new PaymentCommandsImpl(elastic)
     val paymentRoutes = new PaymentRoutes(paymentCommands)
-    val server = new HttpServer("Cart", paymentRoutes.routes, 8082)
+    val server = new HttpServer("Payment", paymentRoutes.routes, 8082)
     server.start()
   }
 }

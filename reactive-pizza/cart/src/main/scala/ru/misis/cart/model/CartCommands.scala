@@ -9,24 +9,17 @@ import scala.concurrent.Future
 
 trait CartCommands {
 
-  def getCart(
-               cartId: String,
-             ): Future[CartInfo]
+  def getCart(cartId: String): Future[CartInfo]
 
-  def deleteCart(
-                  cartId: String,
-                ): Future[Done]
+  def deleteCart(cartId: String): Future[Done]
 
   def addItem(item: Item): Future[ItemData]
 
-  def deleteItem(
-                  itemId: String,
-                  cartId: String,
-                ): Future[Done]
+  def deleteItem(itemId: String, cartId: String): Future[Done]
 
   def putItem(item: Item): Future[Either[Done, Item]]
 
-  def pay(
-           cartId: String,
-         ): Future[Done]
+  def pay(cartId: String): Future[Done]
+
+  def prepareOrder(cartId: String): Future[Done]
 }

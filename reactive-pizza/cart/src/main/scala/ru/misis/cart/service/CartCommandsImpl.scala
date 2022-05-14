@@ -8,11 +8,13 @@ import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
 import ru.misis.cart.model.CartJsonFormats._
-import ru.misis.cart.model.{CartCommands, Mapper}
+import ru.misis.cart.model.CartCommands
 import ru.misis.elastic.Menu.menuHitReader
 import ru.misis.event.Cart._
 import ru.misis.event.EventJsonFormats.orderFormedFormat
+import ru.misis.event.{Mapper, Order}
 import ru.misis.event.Menu._
+import ru.misis.event.Order.{OrderRequest, OrderConfirmed, OrderFormed}
 import ru.misis.util.{WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -179,5 +181,17 @@ class CartCommandsImpl(
       result <- Source.single(OrderFormed(cartInfo))
         .runWith(kafkaSink[OrderFormed])
     } yield result
+  }
+
+  override def prepareOrder(cartId: String): Future[Done] = {
+    for {
+      cart <- getCart(cartId)
+      data = Order(
+        id = cart.id,
+        items = cart.items.map(Mapper.cartItem2OrderItem(cart.id)),
+      )
+    } yield {
+      publishEvent[OrderConfirmed](OrderConfirmed(data))
+    }
   }
 }

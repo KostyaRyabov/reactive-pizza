@@ -12,22 +12,20 @@ class PaymentRoutes(paymentService: PaymentCommands) {
 
   val routes: Route = {
     path("payment") {
-      pathSingleSlash {
-        path("confirm" / Segment) { cartId =>
+      path("confirm" / Segment) { cartId =>
+        get {
+          onSuccess(paymentService.confirm(cartId)) { cartInfo =>
+            complete((StatusCodes.OK, cartInfo))
+          }
+        }
+      } ~
+        path("list") {
           get {
-            onSuccess(paymentService.confirm(cartId)) { cartInfo =>
-              complete((StatusCodes.OK, cartInfo))
+            onSuccess(paymentService.getUnpaidOrders) { bills =>
+              complete(bills.toJson.sortedPrint)
             }
           }
-        } ~
-          path("list") {
-            get {
-              onSuccess(paymentService.getUnpaidOrders) { bills =>
-                complete(bills.toJson.sortedPrint)
-              }
-            }
-          }
-      }
+        }
     }
   }
 }

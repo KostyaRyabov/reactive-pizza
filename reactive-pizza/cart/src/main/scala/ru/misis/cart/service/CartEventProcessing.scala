@@ -1,8 +1,11 @@
 package ru.misis.cart.service
 
 import akka.actor.ActorSystem
+import akka.stream.scaladsl.Sink
 import ru.misis.cart.model.CartCommands
 import ru.misis.event.EventJsonFormats.paymentConfirmedFormat
+import ru.misis.event.Mapper
+import ru.misis.event.Order.OrderConfirmed
 import ru.misis.event.Payment.PaymentConfirmed
 import ru.misis.util.{StreamHelper, WithKafka, WithLogger}
 
@@ -17,7 +20,7 @@ class CartEventProcessing(cartService: CartCommands)
 
   logger.info("Cart Event Processing Initializing ...")
 
-  // todo: добавить потом событие в сервис заказов
   kafkaSource[PaymentConfirmed]
-    .runWith({ case PaymentConfirmed(id) => logger.info("Payment of bill#{} is confirmed.", id) })
+    .wireTap(payment => cartService.prepareOrder(payment.id))
+    .runWith(Sink.ignore)
 }
