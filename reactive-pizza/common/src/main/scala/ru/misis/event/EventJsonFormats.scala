@@ -1,6 +1,8 @@
 package ru.misis.event
 
+import ru.misis.event.Cart._
 import ru.misis.event.Menu._
+import ru.misis.event.Payment._
 import spray.json.DefaultJsonProtocol._
 
 object EventJsonFormats {
@@ -15,11 +17,13 @@ object EventJsonFormats {
     implicit val menuCreatedFormat = jsonFormat1(MenuCreated)
     implicit val routeCardCreatedFormat = jsonFormat1(RouteCardCreated)
 
-    implicit val cartItemDTOFormat = jsonFormat2(Cart.ItemDTO)
-    implicit val cartAppendItemFormat = jsonFormat3(Cart.Item)
-    implicit val cartItemDataFormat = jsonFormat5(Cart.ItemData)
+    implicit val cartItemDTOFormat = jsonFormat2(ItemDTO)
+    implicit val cartAppendItemFormat = jsonFormat3(Item)
+    implicit val cartItemDataFormat = jsonFormat5(ItemData)
 
-    implicit val cartItemInfoFormat = jsonFormat4(Cart.ItemInfo)
-    implicit val cartInfoFormat = jsonFormat2(Cart.CartInfo)
-    implicit val orderFormedFormat = jsonFormat1(Cart.OrderFormed)
+    implicit val cartItemInfoFormat = jsonFormat4(ItemInfo)
+    implicit val cartInfoFormat = jsonFormat2(CartInfo)
+    implicit val orderFormedFormat = jsonFormat1(OrderFormed)
+
+    implicit val paymentConfirmedFormat = jsonFormat1(PaymentConfirmed)
 }

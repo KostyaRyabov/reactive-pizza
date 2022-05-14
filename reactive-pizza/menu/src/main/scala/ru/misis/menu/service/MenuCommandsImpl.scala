@@ -8,46 +8,51 @@ import com.sksamuel.elastic4s.requests.get.GetResponse
 import com.sksamuel.elastic4s.requests.indexes.IndexResponse
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
-import ru.misis.event.Menu.MenuCreated
-import ru.misis.menu.model.MenuCommands
-import ru.misis.menu.model.ModelJsonFormats._
-import ru.misis.menu.model.Objects._
-import ru.misis.util.WithKafka
-
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Sink, Source}
 import io.scalaland.chimney.dsl.TransformerOps
-import org.slf4j.LoggerFactory
+import ru.misis.elastic.Menu._
 import ru.misis.event.Menu._
-import ru.misis.menu.model.Objects._
-import ru.misis.menu.model.MenuCommands
-import ru.misis.util.WithKafka
-import spray.json._
-import ru.misis.event.EventJsonFormats._
-import ru.misis.menu.model.ModelJsonFormats._
-
-import scala.concurrent.ExecutionContext
+import ru.misis.menu.model.ItemJsonFormats._
+import ru.misis.menu.model.{Item, ItemsEvent, MenuCommands}
+import ru.misis.util.{WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object MenuCommandImpl {
-  val itemIndex = "item"
-}
-
-class MenuCommandImpl(elastic: ElasticClient)
-                     (implicit executionContext: ExecutionContext,
+class MenuCommandsImpl(elastic: ElasticClient)
+                      (implicit executionContext: ExecutionContext,
                       val system: ActorSystem)
   extends MenuCommands
-    with WithKafka {
+    with WithKafka
+    with WithLogger {
 
-  import MenuCommandImpl._
+  logger.info(s"Menu server initializing ...")
 
   elastic.execute {
-    deleteIndex(itemIndex)
+    deleteIndex("menu")
   }
     .flatMap { _ =>
       elastic.execute {
-        createIndex(itemIndex).mapping(
+        createIndex("menu").mapping(
+          properties(
+            nestedField("categories").properties(
+              textField("name").boost(4).analyzer("russian"),
+              nestedField("items").properties(
+                keywordField("id"),
+                textField("name").boost(4).analyzer("russian"),
+                textField("description").boost(4).analyzer("russian"),
+                doubleField("price")
+              )
+            )
+          )
+        )
+      }
+    }
+
+  elastic.execute {
+    deleteIndex("item")
+  }
+    .flatMap { _ =>
+      elastic.execute {
+        createIndex("item").mapping(
           properties(
             keywordField("id"),
             textField("name").boost(4).analyzer("russian"),
@@ -68,8 +73,16 @@ class MenuCommandImpl(elastic: ElasticClient)
       }
     }
 
+  override def getMenu: Future[Menu] = {
+    logger.info("Getting menu..")
+
+    elastic
+      .execute(search("menu").matchAllQuery())
+      .map({ case results: RequestSuccess[SearchResponse] => results.result.to[Menu].head })
+  }
+
   override def listItems(): Future[Seq[Item]] = {
-    elastic.execute(search(itemIndex))
+    elastic.execute(search("item"))
       .map {
         case results: RequestSuccess[SearchResponse] => results.result.to[Item]
       }
@@ -77,14 +90,14 @@ class MenuCommandImpl(elastic: ElasticClient)
   }
 
   override def getItem(id: String): Future[Item] =
-    elastic.execute(get(itemIndex, id))
+    elastic.execute(get("item", id))
       .map {
         case results: RequestSuccess[GetResponse] => results.result.to[Item]
       }
 
   override def findItem(name: String): Future[Seq[Item]] = {
     elastic.execute {
-      search(itemIndex).query(
+      search("item").query(
         should(
           matchQuery("name", name),
           matchQuery("description", name)
@@ -98,7 +111,7 @@ class MenuCommandImpl(elastic: ElasticClient)
 
   override def saveItem(item: Item): Future[Item] =
     elastic.execute {
-      indexInto(itemIndex).id(item.id).doc(item)
+      indexInto("item").id(item.id).doc(item)
     }
       .map {
         case results: RequestSuccess[IndexResponse] => item
@@ -107,7 +120,7 @@ class MenuCommandImpl(elastic: ElasticClient)
   override def publish(itemIds: Seq[String]): Future[Done] = {
     for {
       items <- Future.sequence(itemIds.map { itemId =>
-        elastic.execute(get(itemIndex, itemId))
+        elastic.execute(get("item", itemId))
           .map {
             case results: RequestSuccess[GetResponse] => results.result.to[Item]
           }
@@ -115,5 +128,36 @@ class MenuCommandImpl(elastic: ElasticClient)
       result <- Source.single(ItemsEvent(items))
         .runWith(kafkaSink[ItemsEvent])
     } yield result
+  }
+
+  private def saveMenu(menu: Menu): Future[Menu] = {
+    logger.info(s"Menu updating...")
+
+    elastic.execute {
+      indexInto("menu").doc(menu)
+    }
+      .map({
+        case results: RequestSuccess[IndexResponse] => menu
+      })
+  }
+
+  override def createMenu(items: Seq[Item]): Future[MenuCreated] = {
+    logger.info(s"Menu creation...")
+
+    val categories = items
+      .groupBy(_.category)
+      .map({ case (name, items) =>
+        MenuCategory(name, items.map(item => item.into[MenuItem].transform))
+      })
+      .toSeq
+
+    for {
+      menu <- saveMenu(Menu(categories))
+    } yield MenuCreated(menu)
+  }
+
+  override def createRouteMap(items: Seq[Item]): RouteCardCreated = {
+    logger.info(s"Route Map creation...")
+    RouteCardCreated(items.map(item => RouteItem(item.id, item.routeStages)))
   }
 }

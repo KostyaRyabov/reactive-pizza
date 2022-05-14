@@ -1,4 +1,4 @@
-package ru.misis.menu.model
+package ru.misis.cart.model
 
 import ru.misis.event.Cart
 

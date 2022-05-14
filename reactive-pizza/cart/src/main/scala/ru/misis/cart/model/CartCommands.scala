@@ -1,14 +1,13 @@
-package ru.misis.menu.model
+package ru.misis.cart.model
 
 import akka.Done
-import ru.misis.event.Cart._
+import ru.misis.event.Cart
+import ru.misis.event.Cart.{CartInfo, Item, ItemData}
 import ru.misis.event.Menu.Menu
 
 import scala.concurrent.Future
 
 trait CartCommands {
-
-  def getMenu: Future[Menu]
 
   def getCart(
                cartId: String,
@@ -18,7 +17,7 @@ trait CartCommands {
                   cartId: String,
                 ): Future[Done]
 
-  def addItem: Item => Future[ItemData]
+  def addItem(item: Item): Future[ItemData]
 
   def deleteItem(
                   itemId: String,

@@ -1,46 +1,41 @@
 package ru.misis.menu.service
 
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Sink, Source}
-import io.scalaland.chimney.dsl.TransformerOps
-import org.slf4j.LoggerFactory
+import akka.stream.scaladsl.{Flow, Sink}
+import ru.misis.event.EventJsonFormats._
 import ru.misis.event.Menu._
-import ru.misis.menu.model.Objects._
-import ru.misis.menu.model.MenuCommands
-import ru.misis.util.WithKafka
+import ru.misis.menu.model.ItemJsonFormats._
+import ru.misis.menu.model.{ItemsEvent, MenuCommands}
+import ru.misis.util.{StreamHelper, WithKafka, WithLogger}
 import spray.json._
 
-import scala.concurrent.ExecutionContext
+class MenuEventProcessing(menuService: MenuCommands)
+                         (implicit override val system: ActorSystem)
+  extends WithKafka
+    with WithLogger
+    with StreamHelper {
 
-class MenuEventProcessing (menuService: MenuCommands)
-                          (implicit executionContext: ExecutionContext,
-                           override val system: ActorSystem)
-    extends WithKafka {
+  logger.info("Menu Event Processing Initializing ...")
 
-    import ru.misis.event.EventJsonFormats._
-    import ru.misis.menu.model.ModelJsonFormats._
+  /*
+      source ~> broadcast2 ~> createMenu     ~> kafkaSink[MenuCreated]
+                           ~> createRouteMap ~> kafkaSink[RouteCardCreated]
+   */
+  kafkaSource[ItemsEvent]
+    .runWith(broadcastSink2(
+      Flow[ItemsEvent]
+        .mapAsync(1)({ case ItemsEvent(items) => menuService.createMenu(items) })
+        .to(kafkaSink),
+      Flow[ItemsEvent]
+        .map({ case ItemsEvent(items) => menuService.createRouteMap(items) })
+        .to(kafkaSink)
+    ))
 
-    private val logger = LoggerFactory.getLogger(this.getClass)
+  kafkaSource[MenuCreated]
+    .wireTap(value => logger.info("Menu created: {}", value.toJson.prettyPrint))
+    .runWith(Sink.ignore)
 
-    kafkaSource[ItemsEvent]
-        .map{ event =>
-            Menu(event.items
-                .groupBy(_.category)
-                .map{ case (name, items) =>
-                    MenuCategory(name, items.map(item => item.into[MenuItem].transform))
-                }
-                .toSeq
-            ) -> event.items.map(item => RouteItem(item.id, item.routeStages))
-        }
-        .mapAsync(1){ case (menu, routeCard) =>
-            for {
-                _ <- publishEvent(MenuCreated(menu))
-                result <- publishEvent(RouteCardCreated(routeCard))
-            } yield result
-        }
-        .runWith(Sink.ignore)
-
-    kafkaSource[RouteCardCreated]
-        .wireTap(value => logger.info(s"RouteCard created ${value.toJson.prettyPrint}"))
-        .runWith(Sink.ignore)
+  kafkaSource[RouteCardCreated]
+    .wireTap(value => logger.info("RouteCard created: {}", value.toJson.prettyPrint))
+    .runWith(Sink.ignore)
 }

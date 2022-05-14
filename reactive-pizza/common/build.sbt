@@ -13,5 +13,6 @@ lazy val common = (project in file("."))
             "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
             "com.typesafe.akka" %% "akka-stream-kafka" % "3.0.0",
             "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
+            "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % "7.17.2",
         )
     )

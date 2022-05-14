@@ -1,25 +1,24 @@
-package ru.misis.menu
+package ru.misis.payment
 
 import akka.actor.ActorSystem
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
-import ru.misis.menu.routes.MenuRoutes
-import ru.misis.menu.service.{MenuCommandsImpl, MenuEventProcessing}
+import ru.misis.payment.routes.PaymentRoutes
+import ru.misis.payment.service.PaymentCommandsImpl
 import ru.misis.util.HttpServer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object MenuApp {
+object PaymentApp {
   val props = ElasticProperties("http://localhost:9200")
   val elastic = ElasticClient(JavaClient(props))
 
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("HelloAkkaHttpServer")
 
-    val menuCommands = new MenuCommandsImpl(elastic)
-    val menuRoutes = new MenuRoutes(menuCommands)
-    val menuEventProcessing = new MenuEventProcessing(menuCommands)
-    val server = new HttpServer("Menu", menuRoutes.routes, 8080)
+    val paymentCommands = new PaymentCommandsImpl(elastic)
+    val paymentRoutes = new PaymentRoutes(paymentCommands)
+    val server = new HttpServer("Cart", paymentRoutes.routes, 8082)
     server.start()
   }
 }

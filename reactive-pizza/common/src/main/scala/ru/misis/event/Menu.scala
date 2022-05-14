@@ -1,7 +1,5 @@
 package ru.misis.event
 
-import spray.json._
-
 object Menu {
     type ItemId = String
 
