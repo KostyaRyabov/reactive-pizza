@@ -1,7 +1,8 @@
 package ru.misis.orders.model
 
 import akka.Done
-import ru.misis.event.{Order, State}
+import ru.misis.event.Order
+import ru.misis.event.State.State
 
 import scala.concurrent.Future
 

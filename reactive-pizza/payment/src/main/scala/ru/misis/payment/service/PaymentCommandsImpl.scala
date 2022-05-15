@@ -9,7 +9,7 @@ import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
 import ru.misis.event.Cart._
 import ru.misis.event.EventJsonFormats.paymentConfirmedFormat
-import ru.misis.event.Order.OrderFormed
+import ru.misis.event.OrderData.OrderFormed
 import ru.misis.event.Payment.PaymentConfirmed
 import ru.misis.payment.model.PaymentJsonFormats._
 import ru.misis.payment.model.{Bill, PaymentCommands}

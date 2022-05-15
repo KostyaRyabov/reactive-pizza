@@ -10,6 +10,7 @@ import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
 import io.scalaland.chimney.dsl.TransformerOps
 import ru.misis.elastic.Menu._
+import ru.misis.elastic.RouteCart._
 import ru.misis.event.Menu._
 import ru.misis.menu.model.ItemJsonFormats._
 import ru.misis.menu.model.{Item, ItemsEvent, MenuCommands}
@@ -19,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class MenuCommandsImpl(elastic: ElasticClient)
                       (implicit executionContext: ExecutionContext,
-                      val system: ActorSystem)
+                       val system: ActorSystem)
   extends MenuCommands
     with WithKafka
     with WithLogger {
@@ -67,6 +68,28 @@ class MenuCommandsImpl(elastic: ElasticClient)
                 textField("name"),
                 intField("amount")
               )
+            )
+          )
+        )
+      }
+    }
+
+  elastic.execute {
+    deleteIndex("routeCart")
+  }
+    .flatMap { _ =>
+      elastic.execute {
+        createIndex("routeCart").mapping(
+          properties(
+            keywordField("itemId"),
+            nestedField("routeStages").properties(
+              textField("name").boost(4).analyzer("russian"),
+              textField("description").analyzer("russian"),
+              nestedField("products").properties(
+                textField("name"),
+                intField("amount"),
+              ),
+              intField("duration"),
             )
           )
         )
@@ -141,13 +164,27 @@ class MenuCommandsImpl(elastic: ElasticClient)
       })
   }
 
+  private def saveRouteCart(routeCard: Seq[RouteItem]): Future[Seq[RouteItem]] = {
+    logger.info(s"Route Cart updating...")
+
+    for {
+      _ <- elastic.execute {
+        deleteByQuery("routeCart", matchAllQuery())
+      }
+      _ <- elastic.execute {
+        bulk(routeCard.map(indexInto("routeCart").doc))
+      }
+    } yield routeCard
+  }
+
   override def createMenu(items: Seq[Item]): Future[MenuCreated] = {
     logger.info(s"Menu creation...")
 
     val categories = items
       .groupBy(_.category)
-      .map({ case (name, items) =>
-        MenuCategory(name, items.map(item => item.into[MenuItem].transform))
+      .map({
+        case (name, items) =>
+          MenuCategory(name, items.map(item => item.into[MenuItem].transform))
       })
       .toSeq
 
@@ -156,8 +193,10 @@ class MenuCommandsImpl(elastic: ElasticClient)
     } yield MenuCreated(menu)
   }
 
-  override def createRouteMap(items: Seq[Item]): RouteCardCreated = {
+  override def createRouteMap(items: Seq[Item]): Future[RouteCardCreated] = {
     logger.info(s"Route Map creation...")
-    RouteCardCreated(items.map(item => RouteItem(item.id, item.routeStages)))
+
+    val routeCard = items.map(item => RouteItem(item.id, item.routeStages))
+    saveRouteCart(routeCard).map(RouteCardCreated)
   }
 }

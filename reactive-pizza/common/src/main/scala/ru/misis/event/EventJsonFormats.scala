@@ -8,8 +8,8 @@ import spray.json.DefaultJsonProtocol._
 
 object EventJsonFormats {
   implicit val productJsonFormat = jsonFormat2(Product)
-  implicit val stageJsonFormat = jsonFormat4(RouteStage)
-  implicit val stageItemJsonFormat = jsonFormat2(RouteItem)
+  implicit val routeStageJsonFormat = jsonFormat4(RouteStage)
+  implicit val routeItemJsonFormat = jsonFormat2(RouteItem)
   implicit val menuItemJsonFormat = jsonFormat4(MenuItem)
 
   implicit val menuCategoryFormat = jsonFormat2(MenuCategory)
@@ -27,8 +27,11 @@ object EventJsonFormats {
 
   implicit val paymentConfirmedFormat = jsonFormat1(PaymentConfirmed)
 
-  implicit val orderItemFormat = jsonFormat5(Order.Item.apply)
+  implicit val orderItemDataFormat = jsonFormat6(Order.ItemData)
+  implicit val orderItemFormat = jsonFormat3(Order.Item.apply)
+  implicit val orderDataFormat = jsonFormat2(OrderData)
   implicit val orderFormat = jsonFormat2(Order.apply)
+
   implicit val orderFormedFormat = jsonFormat1(OrderFormed)
   implicit val orderConfirmedFormat = jsonFormat1(OrderConfirmed)
 }

@@ -4,27 +4,28 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Source
 import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.indexes.IndexResponse
 import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
-import ru.misis.cart.model.CartJsonFormats._
 import ru.misis.cart.model.CartCommands
+import ru.misis.cart.model.CartJsonFormats._
 import ru.misis.elastic.Menu.menuHitReader
 import ru.misis.event.Cart._
-import ru.misis.event.EventJsonFormats.orderFormedFormat
-import ru.misis.event.{Mapper, Order}
+import ru.misis.event.EventJsonFormats.{orderFormedFormat, orderConfirmedFormat}
 import ru.misis.event.Menu._
-import ru.misis.event.Order.{OrderRequest, OrderConfirmed, OrderFormed}
+import ru.misis.event.Order.{OrderConfirmed, OrderFormed}
+import ru.misis.event.{Mapper, Order}
 import ru.misis.util.{WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class CartCommandsImpl(
-                       elastic: ElasticClient,
-                     )(implicit
-                       executionContext: ExecutionContext,
-                       val system: ActorSystem,
-                     )
+                        elastic: ElasticClient,
+                      )(implicit
+                        executionContext: ExecutionContext,
+                        val system: ActorSystem,
+                      )
   extends CartCommands
     with WithKafka
     with WithLogger {
@@ -122,7 +123,9 @@ class CartCommandsImpl(
               "cartId" -> itemInfo.cartId,
             )
             .doc(itemInfo)
-        ).map(_ => itemInfo)
+        ).map({
+          case request: RequestSuccess[IndexResponse] => itemInfo
+        })
       }
     }
   }
@@ -188,10 +191,11 @@ class CartCommandsImpl(
       cart <- getCart(cartId)
       data = Order(
         id = cart.id,
-        items = cart.items.map(Mapper.cartItem2OrderItem(cart.id)),
+        items = cart.items.map(Mapper.cartItem2OrderItem),
       )
+      result <- publishEvent[OrderConfirmed](OrderConfirmed(data))
     } yield {
-      publishEvent[OrderConfirmed](OrderConfirmed(data))
+      result
     }
   }
 }

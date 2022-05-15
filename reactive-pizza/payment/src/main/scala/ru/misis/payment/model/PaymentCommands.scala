@@ -1,7 +1,7 @@
 package ru.misis.payment.model
 
 import akka.Done
-import ru.misis.event.Order.OrderFormed
+import ru.misis.event.OrderData.OrderFormed
 
 import scala.concurrent.Future
 

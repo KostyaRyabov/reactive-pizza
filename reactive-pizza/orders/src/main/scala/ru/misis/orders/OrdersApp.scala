@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
 import ru.misis.orders.routes.OrderRoutes
-import ru.misis.orders.service.OrderCommandsImpl
+import ru.misis.orders.service.{OrderCommandsImpl, OrderEventProcessing}
 import ru.misis.payment.routes.PaymentRoutes
 import ru.misis.payment.service.PaymentCommandsImpl
 import ru.misis.util.HttpServer
@@ -20,6 +20,7 @@ object OrdersApp {
 
     val orderCommands = new OrderCommandsImpl(elastic)
     val orderRoutes = new OrderRoutes(orderCommands)
+    val orderEventProcessing = new OrderEventProcessing(orderCommands)
     val server = new HttpServer("Orders", orderRoutes.routes, 8083)
     server.start()
   }

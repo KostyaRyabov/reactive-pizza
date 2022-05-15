@@ -2,8 +2,8 @@ package ru.misis.payment.service
 
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
-import ru.misis.event.Cart.OrderFormed
 import ru.misis.event.EventJsonFormats._
+import ru.misis.event.OrderData.OrderFormed
 import ru.misis.payment.model.PaymentCommands
 import ru.misis.util.{WithKafka, WithLogger}
 

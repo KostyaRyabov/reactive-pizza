@@ -5,7 +5,7 @@ import akka.stream.scaladsl.Sink
 import ru.misis.cart.model.CartCommands
 import ru.misis.event.EventJsonFormats.paymentConfirmedFormat
 import ru.misis.event.Mapper
-import ru.misis.event.Order.OrderConfirmed
+import ru.misis.event.OrderData.OrderConfirmed
 import ru.misis.event.Payment.PaymentConfirmed
 import ru.misis.util.{StreamHelper, WithKafka, WithLogger}
 

@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import io.scalaland.chimney.dsl._
 import ru.misis.event.EventJsonFormats._
-import ru.misis.event.Menu.RouteStage
+import ru.misis.event.Menu.{Product, RouteStage}
 import ru.misis.menu.model.ItemJsonFormats._
 import ru.misis.menu.model.{Item, MenuCommands}
 import spray.json.DefaultJsonProtocol._
@@ -67,8 +67,10 @@ class MenuRoutes(menuService: MenuCommands) {
 }
 
 
-case class ItemDTO(name: String,
-                   description: Option[String],
-                   category: String,
-                   price: Double,
-                   routeStages: Seq[RouteStage])
+case class ItemDTO(
+                    name: String,
+                    description: Option[String],
+                    category: String,
+                    price: Double,
+                    routeStages: Seq[RouteStage],
+                  )

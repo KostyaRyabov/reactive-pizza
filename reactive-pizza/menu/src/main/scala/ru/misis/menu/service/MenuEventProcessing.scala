@@ -27,7 +27,7 @@ class MenuEventProcessing(menuService: MenuCommands)
         .mapAsync(1)({ case ItemsEvent(items) => menuService.createMenu(items) })
         .to(kafkaSink),
       Flow[ItemsEvent]
-        .map({ case ItemsEvent(items) => menuService.createRouteMap(items) })
+        .mapAsync(1)({ case ItemsEvent(items) => menuService.createRouteMap(items) })
         .to(kafkaSink)
     ))
 
