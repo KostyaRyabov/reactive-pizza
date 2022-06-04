@@ -17,7 +17,7 @@ class MenuRoutes(menuService: MenuCommands) {
   implicit val itemDTOJsonFormat: RootJsonFormat[ItemDTO] = jsonFormat5(ItemDTO)
 
   val routes: Route =
-    pathPrefix("menu") {
+    path("menu") {
       get {
         onSuccess(menuService.getMenu) { menu =>
           complete((StatusCodes.OK, menu))

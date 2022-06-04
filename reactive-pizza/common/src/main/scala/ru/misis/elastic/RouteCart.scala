@@ -7,7 +7,7 @@ import spray.json._
 
 import scala.util.Try
 
-object RouteCart {
+object RouteCard {
   implicit val menuHitReader: HitReader[RouteItem] = hit => Try(hit.sourceAsString.parseJson.convertTo[RouteItem])
   implicit val menuIndexable: Indexable[RouteItem] = item => item.toJson.compactPrint
 }

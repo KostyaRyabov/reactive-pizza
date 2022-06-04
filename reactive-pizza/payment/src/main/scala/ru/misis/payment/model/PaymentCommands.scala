@@ -1,14 +1,14 @@
 package ru.misis.payment.model
 
 import akka.Done
-import ru.misis.event.OrderData.OrderFormed
+import ru.misis.event.CartCreated
 
 import scala.concurrent.Future
 
 trait PaymentCommands {
-  def confirm(id: String): Future[Done]
+  def confirm: CartCreated => Future[Done]
 
-  def create: OrderFormed => Future[Bill]
+  def getList: Future[Seq[Payment]]
 
-  def getUnpaidOrders: Future[Seq[Bill]]
+  def getPayment(id: String): Future[Payment]
 }

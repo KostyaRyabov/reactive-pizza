@@ -3,6 +3,7 @@ package ru.misis.payment
 import akka.actor.ActorSystem
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
+import ru.misis.payment.model.PaymentConfig
 import ru.misis.payment.routes.PaymentRoutes
 import ru.misis.payment.service.{PaymentCommandsImpl, PaymentEventProcessing}
 import ru.misis.util.HttpServer
@@ -16,7 +17,8 @@ object PaymentApp {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("HelloAkkaHttpServer")
 
-    val paymentCommands = new PaymentCommandsImpl(elastic)
+    val config = PaymentConfig()
+    val paymentCommands = new PaymentCommandsImpl(elastic, config)
     val paymentRoutes = new PaymentRoutes(paymentCommands)
     val paymentEventProcessing = new PaymentEventProcessing(paymentCommands)
     val server = new HttpServer("Payment", paymentRoutes.routes, 8082)

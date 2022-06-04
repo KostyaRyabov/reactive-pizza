@@ -3,11 +3,11 @@ package ru.misis.menu.service
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Flow, Sink}
 import ru.misis.event.EventJsonFormats._
-import ru.misis.event.Menu._
+import ru.misis.event.Menu.{MenuCreated, RouteCardCreated}
 import ru.misis.menu.model.ItemJsonFormats._
 import ru.misis.menu.model.{ItemsEvent, MenuCommands}
 import ru.misis.util.{StreamHelper, WithKafka, WithLogger}
-import spray.json._
+import spray.json.enrichAny
 
 class MenuEventProcessing(menuService: MenuCommands)
                          (implicit override val system: ActorSystem)
@@ -17,17 +17,13 @@ class MenuEventProcessing(menuService: MenuCommands)
 
   logger.info("Menu Event Processing Initializing ...")
 
-  /*
-      source ~> broadcast2 ~> createMenu     ~> kafkaSink[MenuCreated]
-                           ~> createRouteMap ~> kafkaSink[RouteCardCreated]
-   */
   kafkaSource[ItemsEvent]
     .runWith(broadcastSink2(
       Flow[ItemsEvent]
         .mapAsync(1)({ case ItemsEvent(items) => menuService.createMenu(items) })
         .to(kafkaSink),
       Flow[ItemsEvent]
-        .mapAsync(1)({ case ItemsEvent(items) => menuService.createRouteMap(items) })
+        .map({ case ItemsEvent(items) => menuService.createRouteMap(items) })
         .to(kafkaSink)
     ))
 

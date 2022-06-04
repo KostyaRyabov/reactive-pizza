@@ -20,5 +20,5 @@ trait MenuCommands {
 
   def createMenu(items: Seq[Item]): Future[MenuCreated]
 
-  def createRouteMap(items: Seq[Item]): Future[RouteCardCreated]
+  def createRouteMap(items: Seq[Item]): RouteCardCreated
 }

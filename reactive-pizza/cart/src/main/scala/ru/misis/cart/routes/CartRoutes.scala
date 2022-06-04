@@ -12,7 +12,7 @@ import ru.misis.event.EventJsonFormats._
 class CartRoutes(cartService: CartCommands) {
 
   val routes: Route = {
-    pathPrefix("carts") {
+    path("carts") {
       (post & entity(as[Item])) { item =>
         onSuccess(cartService.addItem(item)) { itemInfo =>
           complete((StatusCodes.Created, itemInfo))

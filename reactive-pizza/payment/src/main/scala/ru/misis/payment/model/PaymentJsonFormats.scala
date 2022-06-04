@@ -1,5 +1,7 @@
 package ru.misis.payment.model
 
+import java.time.LocalDateTime
+
 import com.sksamuel.elastic4s.{HitReader, Indexable}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
@@ -7,8 +9,8 @@ import spray.json._
 import scala.util.Try
 
 object PaymentJsonFormats {
-  implicit val billJsonFormat: RootJsonFormat[Bill] = jsonFormat2(Bill)
+  implicit val paymentJsonFormat: RootJsonFormat[Payment] = jsonFormat3(Payment)
 
-  implicit val billHitReader: HitReader[Bill] = hit => Try(hit.sourceAsString.parseJson.convertTo[Bill])
-  implicit val billIndexable: Indexable[Bill] = bill => bill.toJson.compactPrint
+  implicit val billHitReader: HitReader[Payment] = hit => Try(hit.sourceAsString.parseJson.convertTo[Payment])
+  implicit val billIndexable: Indexable[Payment] = bill => bill.toJson.compactPrint
 }

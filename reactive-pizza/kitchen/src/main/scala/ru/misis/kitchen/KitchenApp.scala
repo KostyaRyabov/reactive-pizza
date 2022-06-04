@@ -3,6 +3,7 @@ package ru.misis.kitchen
 import akka.actor.ActorSystem
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
+import ru.misis.kitchen.model.KitchenConfig
 import ru.misis.kitchen.routes.KitchenRoutes
 import ru.misis.kitchen.service.{KitchenCommandsImpl, KitchenEventProcessing}
 import ru.misis.util.HttpServer
@@ -16,7 +17,8 @@ object PaymentApp {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("HelloAkkaHttpServer")
 
-    val kitchenCommands = new KitchenCommandsImpl(elastic)
+    val config = KitchenConfig()
+    val kitchenCommands = new KitchenCommandsImpl(elastic, config)
     val kitchenRoutes = new KitchenRoutes(kitchenCommands)
     val kitchenEventProcessing = new KitchenEventProcessing(kitchenCommands)
     val server = new HttpServer("Payment", kitchenRoutes.routes, 8084)

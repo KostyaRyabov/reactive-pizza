@@ -3,9 +3,7 @@ package ru.misis.cart.service
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
 import ru.misis.cart.model.CartCommands
-import ru.misis.event.EventJsonFormats.paymentConfirmedFormat
-import ru.misis.event.Mapper
-import ru.misis.event.OrderData.OrderConfirmed
+import ru.misis.event.EventJsonFormats.paymentConfirmedJsonFormat
 import ru.misis.event.Payment.PaymentConfirmed
 import ru.misis.util.{StreamHelper, WithKafka, WithLogger}
 
@@ -21,6 +19,7 @@ class CartEventProcessing(cartService: CartCommands)
   logger.info("Cart Event Processing Initializing ...")
 
   kafkaSource[PaymentConfirmed]
-    .wireTap(payment => cartService.prepareOrder(payment.id))
+    .wireTap(_ => logger.info("Payment confirmed!"))
+    .mapAsync(1)(payment => cartService.confirmCart(payment.id))
     .runWith(Sink.ignore)
 }

@@ -2,47 +2,49 @@ package ru.misis.orders.service
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
+import akka.actor.typed.scaladsl.{Behaviors, Routers}
+import akka.actor.typed.{ActorRef, SupervisorStrategy}
 import com.sksamuel.elastic4s.ElasticApi.{createIndex, deleteIndex, properties}
 import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.indexes.admin.IndexExistsResponse
+import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
 import ru.misis.elastic.Order._
+import ru.misis.event.EventJsonFormats.orderSubmittedJsonFormat
+import ru.misis.event.Mapper.orderItemRefine
 import ru.misis.event.Order._
 import ru.misis.event.State.State
-import ru.misis.event.{Mapper, Order, State}
-import ru.misis.orders.model.OrderCommands
-import ru.misis.util.{WithKafka, WithLogger}
+import ru.misis.event.{Mapper, Order, OrderSubmitted, State}
+import ru.misis.orders.model.{OrderCommands, OrderConfig}
+import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OrderCommandsImpl(
-                         elastic: ElasticClient,
-                       )(implicit
-                         executionContext: ExecutionContext,
-                         val system: ActorSystem,
-                       )
+class OrderCommandsImpl(val elastic: ElasticClient, config: OrderConfig)
+                       (implicit val executionContext: ExecutionContext, val system: ActorSystem)
   extends OrderCommands
     with WithKafka
-    with WithLogger {
+    with WithLogger
+    with WithElasticInit {
 
   logger.info(s"Order server initializing ...")
 
-  elastic.execute(
-    deleteIndex("orders")
-  )
-    .flatMap(_ =>
-      elastic.execute(
-        createIndex("orders").mapping(
-          properties(
-            keywordField("id"),
-            textField("orderId"),
-            textField("menuItemId"),
-            textField("name"),
-            doubleField("progress"),
-          )
-        )
-      )
+  private val waiterPool = Routers.pool(poolSize = 3) {
+    Behaviors.supervise(Waiter(this)).onFailure[Exception](SupervisorStrategy.restart)
+  }
+  override val waiter: ActorRef[Waiter.Command] = system.spawn(waiterPool, "waiter-pool")
+
+  initElastic("orders")(
+    properties(
+      keywordField("id"),
+      textField("orderId"),
+      textField("menuItemId"),
+      textField("name"),
+      textField("state"),
     )
+  )
 
   private def getItems(orderId: String): Future[Seq[ItemData]] = {
     elastic.execute(search("orders").matchQuery("cartId", orderId))
@@ -50,31 +52,39 @@ class OrderCommandsImpl(
   }
 
   override def getOrder(orderId: String): Future[Order] = {
-    getItems(orderId).map(items => Order(orderId, items.map(Mapper.orderItemMinimize)))
-  }
-
-  override def placeOrder(order: Order): Future[Done] = {
-    elastic.execute {
-      bulk(
-        order.items
-          .map(Mapper.orderItemRefine(order.id))
-          .map(indexInto("orders").doc)
-      )
-    }.map(_ => Done)
-  }
-
-  override def getOrderState(orderId: String): Future[State] = {
-    getItems(orderId).map {
-      case items if items.exists(_.isInProcess) => State.InProcess
-      case items if items.forall(_.isReady) => State.Ready
-      case items if items.forall(_.isInWait) => State.InWait
-      case _ => State.NotFound
+    logger.info(s"Getting order#$orderId ...")
+    for {
+      items <- getItems(orderId)
+        .map(_.map(Mapper.orderItemMinimize))
+    } yield {
+      Order(orderId, items)
     }
   }
 
-  override def completeOrder(orderId: String): Future[Done] = {
+  override def getOrderState(orderId: String): Future[State] = {
+    getOrder(orderId).map(_.getItemsSumState)
+  }
+
+  override def submit(order: Order): Future[Done] = {
+    logger.info(s"Submitting order#${order.id} ...")
+    val items = order.items.map(orderItemRefine(order.id))
     elastic.execute {
-      deleteByQuery("orders", matchQuery("orderId", orderId))
-    }.map(_ => Done)
+      bulk(items.map(indexInto("orders").doc))
+    }
+    publishEvent(OrderSubmitted(items))
+  }
+
+  override def returnOrder(order: Order): Future[Done] = {
+    elastic.execute(
+      updateByQuery("orders", matchQuery("orderId", order.id))
+        .script(
+          Script("ctx._source.state=params.state;")
+            .params(Map("state" -> State.Completed))
+            .lang("painless")
+        )
+    ).map(_ => {
+      logger.info(s"Order#${order.id} returned!")
+      Done
+    })
   }
 }

@@ -2,52 +2,41 @@ package ru.misis.cart.service
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.Source
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.requests.indexes.IndexResponse
+import com.sksamuel.elastic4s.requests.indexes.admin.IndexExistsResponse
 import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
-import ru.misis.cart.model.CartCommands
+import ru.misis.cart.model.{CartCommands, CartConfig}
 import ru.misis.cart.model.CartJsonFormats._
 import ru.misis.elastic.Menu.menuHitReader
 import ru.misis.event.Cart._
-import ru.misis.event.EventJsonFormats.{orderFormedFormat, orderConfirmedFormat}
+import ru.misis.event.EventJsonFormats.{orderConfirmedJsonFormat, orderFormedJsonFormat}
 import ru.misis.event.Menu._
-import ru.misis.event.Order.{OrderConfirmed, OrderFormed}
-import ru.misis.event.{Mapper, Order}
-import ru.misis.util.{WithKafka, WithLogger}
+import ru.misis.event.{CartConfirmed, CartCreated, Mapper, Order}
+import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CartCommandsImpl(
-                        elastic: ElasticClient,
-                      )(implicit
-                        executionContext: ExecutionContext,
-                        val system: ActorSystem,
-                      )
+class CartCommandsImpl(val elastic: ElasticClient, config: CartConfig)
+                      (implicit val executionContext: ExecutionContext, val system: ActorSystem)
   extends CartCommands
     with WithKafka
-    with WithLogger {
+    with WithLogger
+    with WithElasticInit {
 
   logger.info(s"Cart server initializing ...")
 
-  elastic.execute(
-    deleteIndex("cart")
-  )
-    .flatMap(_ =>
-      elastic.execute(
-        createIndex("cart").mapping(
-          properties(
-            keywordField("id"),
-            keywordField("cartId"),
-            textField("name").analyzer("russian"),
-            doubleField("price"),
-            intField("amount"),
-          )
-        )
-      )
+  initElastic("item")(
+    properties(
+      keywordField("id"),
+      keywordField("cartId"),
+      textField("name").analyzer("russian"),
+      doubleField("price"),
+      intField("amount"),
     )
+  )
 
   private def getMenu: Future[Menu] = {
     logger.info("Getting menu..")
@@ -102,7 +91,7 @@ class CartCommandsImpl(
   override def deleteCart(
                            cartId: String,
                          ): Future[Done] = {
-    logger.info(s"Deletion chart $cartId..")
+    logger.info(s"Deletion cart $cartId..")
 
     elastic
       .execute(deleteByQuery("cart", matchQuery("cartId", cartId)))
@@ -110,6 +99,8 @@ class CartCommandsImpl(
   }
 
   override def addItem(item: Item): Future[ItemData] = {
+    logger.info(s"Adding item#${item.itemId} to cart#${item.cartId}..")
+
     if (item.amount <= 0) {
       Future.failed(throw new Exception("Quantity of item is non-positive!"))
     } else {
@@ -134,7 +125,7 @@ class CartCommandsImpl(
                            itemId: String,
                            cartId: String,
                          ): Future[Done] = {
-    logger.info(s"Deletion item from chart $cartId:$itemId..")
+    logger.info(s"Deletion item from cart $cartId:$itemId..")
 
     for {
       result <- elastic.execute(
@@ -147,7 +138,7 @@ class CartCommandsImpl(
   }
 
   private def updateItem(item: Item): Future[Item] = {
-    logger.info(s"Updating item on chart ${item.cartId}:${item.itemId}..")
+    logger.info(s"Updating item on cart ${item.cartId}:${item.itemId}..")
 
     elastic.execute(
       updateByQuery("cart", boolQuery().should(
@@ -181,19 +172,20 @@ class CartCommandsImpl(
 
     for {
       cartInfo <- getCart(cartId)
-      result <- Source.single(OrderFormed(cartInfo))
-        .runWith(kafkaSink[OrderFormed])
+      result <- publishEvent(CartCreated(cartInfo))
     } yield result
   }
 
-  override def prepareOrder(cartId: String): Future[Done] = {
+  override def confirmCart(cartId: String): Future[Done] = {
+    logger.info(s"Confirming cart#$cartId..")
+
     for {
       cart <- getCart(cartId)
       data = Order(
         id = cart.id,
         items = cart.items.map(Mapper.cartItem2OrderItem),
       )
-      result <- publishEvent[OrderConfirmed](OrderConfirmed(data))
+      result <- publishEvent(CartConfirmed(data))
     } yield {
       result
     }

@@ -2,6 +2,8 @@ package ru.misis.event
 
 import java.util.UUID
 
+import ru.misis.event.Cart.CartInfo
+
 object Cart {
 
   // for requests:
@@ -40,5 +42,6 @@ object Cart {
                        id: String,
                        items: Seq[ItemInfo],
                      )
-
 }
+
+case class CartCreated(cart: CartInfo) extends Event

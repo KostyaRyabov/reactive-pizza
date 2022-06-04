@@ -21,5 +21,5 @@ trait CartCommands {
 
   def pay(cartId: String): Future[Done]
 
-  def prepareOrder(cartId: String): Future[Done]
+  def confirmCart(cartId: String): Future[Done]
 }
