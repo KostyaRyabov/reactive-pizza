@@ -14,13 +14,13 @@ import ru.misis.event.CartCreated
 import ru.misis.event.EventJsonFormats.paymentConfirmedJsonFormat
 import ru.misis.event.Payment.PaymentConfirmed
 import ru.misis.payment.model.PaymentJsonFormats._
-import ru.misis.payment.model.{Payment, PaymentCommands, PaymentConfig}
+import ru.misis.payment.model.{Payment, PaymentCommands, PaymentSettings}
 import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
 import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class PaymentCommandsImpl(val elastic: ElasticClient, config: PaymentConfig)
+class PaymentCommandsImpl(val elastic: ElasticClient, val settings: PaymentSettings)
                          (implicit val executionContext: ExecutionContext, val system: ActorSystem)
   extends PaymentCommands
     with WithKafka

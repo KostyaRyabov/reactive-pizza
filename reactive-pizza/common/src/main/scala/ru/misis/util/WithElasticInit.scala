@@ -5,7 +5,7 @@ import com.sksamuel.elastic4s.ElasticDsl.{CreateIndexHandler, DeleteIndexHandler
 import com.sksamuel.elastic4s.requests.indexes.admin.IndexExistsResponse
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
-import ru.misis.elastic.ConfigElasticClear
+import ru.misis.elastic.ElasticClearSettings
 
 import scala.concurrent.ExecutionContext
 
@@ -14,19 +14,21 @@ trait WithElasticInit extends WithLogger {
 
   implicit def executionContext: ExecutionContext
 
-  def config: ConfigElasticClear
+  def settings: ElasticClearSettings
 
   def initElastic(name: String)(mapping: MappingDefinition): Unit = {
+    logger.info(s"Init elastic index '$name' ...")
+
     elastic.execute(indexExists(name)).map {
-      case response: RequestSuccess[IndexExistsResponse] if !response.result.isExists || config.clearElastic =>
+      case response: RequestSuccess[IndexExistsResponse] if !response.result.isExists || settings.clearElastic =>
         for {
           _ <- elastic.execute(deleteIndex(name))
           _ <- elastic.execute(createIndex(name).mapping(mapping))
         } yield {
           if (response.result.isExists) {
-            logger.info(s"Elastic $name was cleared!")
+            logger.info(s"Elastic index $name was cleared!")
           } else {
-            logger.info(s"Elastic $name was created!")
+            logger.info(s"Elastic index $name was created!")
           }
         }
     }

@@ -11,12 +11,12 @@ import io.scalaland.chimney.dsl.TransformerOps
 import ru.misis.elastic.Menu._
 import ru.misis.event.Menu._
 import ru.misis.menu.model.ItemJsonFormats._
-import ru.misis.menu.model.{Item, ItemsEvent, MenuCommands, MenuConfig}
+import ru.misis.menu.model.{Item, ItemsEvent, MenuCommands, MenuSettings}
 import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class MenuCommandsImpl(val elastic: ElasticClient, config: MenuConfig)
+class MenuCommandsImpl(val elastic: ElasticClient, val settings: MenuSettings)
                       (implicit val executionContext: ExecutionContext, val system: ActorSystem)
   extends MenuCommands
     with WithKafka

@@ -1,24 +1,24 @@
 package ru.misis.kitchen.model
 
 import com.typesafe.config.ConfigFactory
-import ru.misis.elastic.ConfigElasticClear
+import ru.misis.elastic.ElasticClearSettings
 
-object KitchenConfig {
+object KitchenSettings {
   val clearElasticFieldName = "clear-elastic"
   val chefInstancesNumFieldName = "chef-instances-num"
 
-  def apply(): KitchenConfig = {
+  def apply(): KitchenSettings = {
     val config = ConfigFactory.load().getConfig("kitchen")
     val clearElasticValue = config.getBoolean(clearElasticFieldName)
     val chefInstancesNum = config.getInt(chefInstancesNumFieldName)
-    KitchenConfig(
+    KitchenSettings(
       clearElastic = clearElasticValue,
       chefInstancesNum = chefInstancesNum,
     )
   }
 }
 
-case class KitchenConfig(
+case class KitchenSettings(
                           clearElastic: Boolean,
                           chefInstancesNum: Int,
-                        ) extends ConfigElasticClear
+                        ) extends ElasticClearSettings

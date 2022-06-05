@@ -8,7 +8,7 @@ import com.sksamuel.elastic4s.requests.indexes.admin.IndexExistsResponse
 import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
-import ru.misis.cart.model.{CartCommands, CartConfig}
+import ru.misis.cart.model.{CartCommands, CartSettings}
 import ru.misis.cart.model.CartJsonFormats._
 import ru.misis.elastic.Menu.menuHitReader
 import ru.misis.event.Cart._
@@ -19,7 +19,7 @@ import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CartCommandsImpl(val elastic: ElasticClient, config: CartConfig)
+class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
                       (implicit val executionContext: ExecutionContext, val system: ActorSystem)
   extends CartCommands
     with WithKafka

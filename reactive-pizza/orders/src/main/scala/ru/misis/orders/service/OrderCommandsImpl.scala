@@ -17,12 +17,12 @@ import ru.misis.event.Mapper.orderItemRefine
 import ru.misis.event.Order._
 import ru.misis.event.State.State
 import ru.misis.event.{Mapper, Order, OrderSubmitted, State}
-import ru.misis.orders.model.{OrderCommands, OrderConfig}
+import ru.misis.orders.model.{OrderCommands, OrderSettings}
 import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OrderCommandsImpl(val elastic: ElasticClient, config: OrderConfig)
+class OrderCommandsImpl(val elastic: ElasticClient, val settings: OrderSettings)
                        (implicit val executionContext: ExecutionContext, val system: ActorSystem)
   extends OrderCommands
     with WithKafka
@@ -68,9 +68,7 @@ class OrderCommandsImpl(val elastic: ElasticClient, config: OrderConfig)
   override def submit(order: Order): Future[Done] = {
     logger.info(s"Submitting order#${order.id} ...")
     val items = order.items.map(orderItemRefine(order.id))
-    elastic.execute {
-      bulk(items.map(indexInto("orders").doc))
-    }
+    elastic.execute(bulk(items.map(indexInto("orders").doc(_))))
     publishEvent(OrderSubmitted(items))
   }
 

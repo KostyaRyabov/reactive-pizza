@@ -1,20 +1,20 @@
 package ru.misis.menu.model
 
 import com.typesafe.config.ConfigFactory
-import ru.misis.elastic.ConfigElasticClear
+import ru.misis.elastic.ElasticClearSettings
 
-object MenuConfig {
+object MenuSettings {
   val clearElasticFieldName = "clear-elastic"
 
-  def apply(): MenuConfig = {
+  def apply(): MenuSettings = {
     val config = ConfigFactory.load().getConfig("menu")
     val clearElasticValue = config.getBoolean(clearElasticFieldName)
-    MenuConfig(
+    MenuSettings(
       clearElastic = clearElasticValue,
     )
   }
 }
 
-case class MenuConfig(
+case class MenuSettings(
                        clearElastic: Boolean,
-                     ) extends ConfigElasticClear
+                     ) extends ElasticClearSettings

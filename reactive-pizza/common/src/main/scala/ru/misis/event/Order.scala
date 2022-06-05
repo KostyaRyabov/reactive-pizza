@@ -7,22 +7,27 @@ import ru.misis.event.State._
 object Order {
   val initStage: Int = -1
 
+  trait ItemLike extends WithState {
+    def menuItemId: String
+    def name: String
+    def state: State
+  }
+
   case class Item(
                    menuItemId: String,
                    name: String,
                    state: State = State.InWait,
                  )
-    extends WithState
+    extends ItemLike
 
   case class ItemData(
                        id: String = UUID.randomUUID().toString,
                        orderId: String,
-                       override val menuItemId: String,
-                       override val name: String,
-                       override val state: State = State.InWait,
+                       menuItemId: String,
+                       name: String,
+                       state: State = State.InWait,
                      )
-    extends Item(menuItemId, name, state)
-      with WithState
+    extends ItemLike
 }
 
 case class CartConfirmed(data: Order) extends Event

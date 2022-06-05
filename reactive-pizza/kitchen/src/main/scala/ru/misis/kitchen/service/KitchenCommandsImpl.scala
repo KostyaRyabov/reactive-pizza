@@ -16,12 +16,12 @@ import ru.misis.event.Menu.RouteItem
 import ru.misis.event.Order.ItemData
 import ru.misis.event.State.State
 import ru.misis.event.{ItemStateUpdated, Order}
-import ru.misis.kitchen.model.{KitchenCommands, KitchenConfig}
+import ru.misis.kitchen.model.{KitchenCommands, KitchenSettings}
 import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class KitchenCommandsImpl(val elastic: ElasticClient, config: KitchenConfig)
+class KitchenCommandsImpl(val elastic: ElasticClient, val settings: KitchenSettings)
                          (implicit val executionContext: ExecutionContext, val system: ActorSystem)
   extends KitchenCommands
     with WithKafka
@@ -58,7 +58,7 @@ class KitchenCommandsImpl(val elastic: ElasticClient, config: KitchenConfig)
         deleteByQuery("routeCard", matchAllQuery())
       }
       _ <- elastic.execute {
-        bulk(routeCard.map(indexInto("routeCard").doc))
+        bulk(routeCard.map(indexInto("routeCard").doc(_)))
       }
     } yield routeCard
   }

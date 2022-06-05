@@ -1,5 +1,5 @@
 package ru.misis.elastic
 
-trait ConfigElasticClear {
+trait ElasticClearSettings {
   def clearElastic: Boolean
 }

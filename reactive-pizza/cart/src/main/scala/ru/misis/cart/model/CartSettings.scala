@@ -1,20 +1,20 @@
 package ru.misis.cart.model
 
 import com.typesafe.config.ConfigFactory
-import ru.misis.elastic.ConfigElasticClear
+import ru.misis.elastic.ElasticClearSettings
 
-object CartConfig {
+object CartSettings {
   val clearElasticFieldName = "clear-elastic"
 
-  def apply(): CartConfig = {
+  def apply(): CartSettings = {
     val config = ConfigFactory.load().getConfig("cart")
     val clearElasticValue = config.getBoolean(clearElasticFieldName)
-    CartConfig(
+    CartSettings(
       clearElastic = clearElasticValue,
     )
   }
 }
 
-case class CartConfig(
+case class CartSettings(
                        clearElastic: Boolean,
-                     ) extends ConfigElasticClear
+                     ) extends ElasticClearSettings

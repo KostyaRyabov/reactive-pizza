@@ -1,7 +1,5 @@
 package ru.misis.event
 
-import ru.misis.event.State._
-
 object State extends Enumeration {
   type State = String
 
@@ -14,6 +12,8 @@ object State extends Enumeration {
 
 
 trait WithState {
+  import ru.misis.event.State._
+
   def state: State
 
   def isCompleted: Boolean = state == Completed
@@ -28,6 +28,8 @@ trait WithState {
 }
 
 trait WithItemsState {
+  import ru.misis.event.State._
+
   def items: Seq[WithState]
 
   def getItemsSumState: State = {

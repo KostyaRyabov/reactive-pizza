@@ -1,8 +1,9 @@
 package ru.misis.payment.service
 
 import akka.actor.ActorSystem
-import ru.misis.event.EventJsonFormats._
-import ru.misis.event.Order.CartCreated
+import akka.stream.scaladsl.Sink
+import ru.misis.event.CartCreated
+import ru.misis.event.EventJsonFormats.orderFormedJsonFormat
 import ru.misis.payment.model.PaymentCommands
 import ru.misis.util.{WithKafka, WithLogger}
 
@@ -15,6 +16,6 @@ class PaymentEventProcessing(paymentService: PaymentCommands)
 
   kafkaSource[CartCreated]
     .mapAsync(1)(paymentService.confirm(_))
-    .to(kafkaSink)
+    .to(Sink.ignore)
 
 }

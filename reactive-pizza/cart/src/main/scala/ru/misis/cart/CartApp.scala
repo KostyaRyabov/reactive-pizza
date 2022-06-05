@@ -3,7 +3,7 @@ package ru.misis.cart
 import akka.actor.ActorSystem
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.{ElasticClient, ElasticProperties}
-import ru.misis.cart.model.CartConfig
+import ru.misis.cart.model.CartSettings
 import ru.misis.cart.routes.CartRoutes
 import ru.misis.cart.service.{CartCommandsImpl, CartEventProcessing}
 import ru.misis.util.HttpServer
@@ -15,9 +15,9 @@ object CartApp {
   val elastic = ElasticClient(JavaClient(props))
 
   def main(args: Array[String]): Unit = {
-    implicit val system = ActorSystem("HelloAkkaHttpServer")
+    implicit val system = ActorSystem("CartHttpServer")
 
-    val config = CartConfig()
+    val config = CartSettings()
     val cartCommands = new CartCommandsImpl(elastic, config)
     val cartRoutes = new CartRoutes(cartCommands)
     val cartEventProcessing = new CartEventProcessing(cartCommands)
