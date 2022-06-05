@@ -12,12 +12,14 @@ object Mapper {
     )
   }
 
-  def cartItem2OrderItem(data: Cart.ItemInfo): Order.Item = {
-    Order.Item(
-      menuItemId = data.id,
-      name = data.name,
-      state = State.InWait,
-    )
+  def cartItem2OrderItems(data: Cart.ItemInfo): Seq[Order.Item] = {
+    for (i <- 0 until data.amount) yield {
+      Order.Item(
+        menuItemId = data.id,
+        name = data.name,
+        state = State.InWait,
+      )
+    }
   }
 
   def orderItemMinimize(item: Order.ItemData): Order.Item = {

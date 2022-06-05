@@ -183,7 +183,7 @@ class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
       cart <- getCart(cartId)
       data = Order(
         id = cart.id,
-        items = cart.items.map(Mapper.cartItem2OrderItem),
+        items = cart.items.flatMap(Mapper.cartItem2OrderItems),
       )
       result <- publishEvent(CartConfirmed(data))
     } yield {
