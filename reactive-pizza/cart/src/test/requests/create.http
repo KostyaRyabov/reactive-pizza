@@ -1,0 +1,85 @@
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "itemId": "e276ebc8-454e-42c4-aecf-1107243b83d9",
+  "amount": 2
+}
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "6fcb2add-a51e-4a27-80d4-178f5ab2de3e",
+  "itemId": "e276ebc8-454e-42c4-aecf-1107243b83d9",
+  "amount": 3
+}
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "6fcb2add-a51e-4a27-80d4-178f5ab2de3e",
+  "itemId": "707567d7-bdbc-4a28-b6c4-08027b387078",
+  "amount": 1
+}
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "6fcb2add-a51e-4a27-80d4-178f5ab2de3e",
+  "itemId": "933bf1a7-7169-435f-8625-206a00b5e429",
+  "amount": 4
+}
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "6fcb2add-a51e-4a27-80d4-178f5ab2de3e",
+  "itemId": "b6c6aa6f-cce5-480e-a236-6046d972ad08",
+  "amount": 2
+}
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "6fcb2add-a51e-4a27-80d4-178f5ab2de3e",
+  "itemId": "d6eb8dcb-d9e1-429d-a334-e8a589bef075",
+  "amount": 5
+}
+
+###
+PUT http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "6fcb2add-a51e-4a27-80d4-178f5ab2de3e",
+  "itemId": "d6eb8dcb-d9e1-429d-a334-e8a589bef075",
+  "amount": 10
+}
+
+###
+PUT http://localhost:8081/carts
+Content-Type: application/json
+
+{
+  "cartId": "6fcb2add-a51e-4a27-80d4-178f5ab2de3e",
+  "itemId": "d6eb8dcb-d9e1-429d-a334-e8a589bef075",
+  "amount": -2
+}
+
+###
+GET http://localhost:8081/cart/6fcb2add-a51e-4a27-80d4-178f5ab2de3e
+Content-Type: application/json
+
+

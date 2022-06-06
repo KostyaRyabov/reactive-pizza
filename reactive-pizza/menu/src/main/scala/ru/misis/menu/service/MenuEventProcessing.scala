@@ -10,7 +10,7 @@ import ru.misis.util.{StreamHelper, WithKafka, WithLogger}
 import spray.json.enrichAny
 
 class MenuEventProcessing(menuService: MenuCommands)
-                         (implicit override val system: ActorSystem)
+                         (implicit val system: ActorSystem)
   extends WithKafka
     with WithLogger
     with StreamHelper {

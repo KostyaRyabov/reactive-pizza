@@ -32,6 +32,7 @@ object Mapper {
 
   def orderItemRefine(orderId: String)(item: Order.Item): Order.ItemData = {
     Order.ItemData(
+      id = item.id,
       orderId = orderId,
       menuItemId = item.menuItemId,
       name = item.name,

@@ -1,0 +1,9 @@
+
+###
+GET http://localhost:8082/payments
+Content-Type: application/json
+
+###
+GET http://localhost:8082/payment/6fcb2add-a51e-4a27-80d4-178f5ab2de3e
+Content-Type: application/json
+

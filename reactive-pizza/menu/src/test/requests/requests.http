@@ -3,7 +3,7 @@ GET http://localhost:8080/items
 Content-Type: application/json
 
 ###
-GET http://localhost:8080/item/sdfsadf
+GET http://localhost:8080/item/b016c146-d0a9-4f05-8632-4f7486aa2903
 Content-Type: application/json
 
 ###
@@ -15,65 +15,15 @@ POST http://localhost:8080/publish
 Content-Type: application/json
 
 [
-  "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
-  "392e3254-b730-437e-899b-bcaf4b396fe0"
+  "e276ebc8-454e-42c4-aecf-1107243b83d9",
+  "707567d7-bdbc-4a28-b6c4-08027b387078",
+  "933bf1a7-7169-435f-8625-206a00b5e429",
+  "b6c6aa6f-cce5-480e-a236-6046d972ad08",
+  "d6eb8dcb-d9e1-429d-a334-e8a589bef075",
+  "90da70d5-23e9-42cc-9568-269d9768c01f",
+  "976d21be-30a1-452c-9c2a-54a1952e1344"
 ]
 
 ###
-GET http://localhost:8081/menu
-Content-Type: application/json
-
-###
-POST http://localhost:8081/carts
-Content-Type: application/json
-
-{
-  "itemId": "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
-  "amount": 2
-}
-
-###
-POST http://localhost:8081/carts
-Content-Type: application/json
-
-{
-  "cartId": "0dd5e063-4a03-4a30-b975-884456c63554",
-  "itemId": "392e3254-b730-437e-899b-bcaf4b396fe0",
-  "amount": 1
-}
-
-###
-PUT http://localhost:8081/carts
-Content-Type: application/json
-
-{
-  "cartId": "0dd5e063-4a03-4a30-b975-884456c63554",
-  "itemId": "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
-  "amount": 10
-}
-
-###
-PUT http://localhost:8081/carts
-Content-Type: application/json
-
-{
-  "cartId": "0dd5e063-4a03-4a30-b975-884456c63554",
-  "itemId": "63f8b0b5-659d-48ea-968a-7b8a0eb15077",
-  "amount": 0
-}
-
-###
-GET http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554
-Content-Type: application/json
-
-###
-DELETE http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554
-Content-Type: application/json
-
-###
-DELETE http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554/items/63f8b0b5-659d-48ea-968a-7b8a0eb15077
-Content-Type: application/json
-
-###
-GET http://localhost:8081/carts/0dd5e063-4a03-4a30-b975-884456c63554/pay
+GET http://localhost:8080/menu
 Content-Type: application/json

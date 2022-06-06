@@ -120,12 +120,12 @@ class MenuCommandsImpl(val elastic: ElasticClient, val settings: MenuSettings)
   private def saveMenu(menu: Menu): Future[Menu] = {
     logger.info(s"Menu updating...")
 
-    elastic.execute {
-      indexInto("menu").doc(menu)
+    for {
+      _ <- elastic.execute(deleteByQuery("menu", matchAllQuery()))
+      _ <- elastic.execute(indexInto("menu").doc(menu))
+    } yield {
+      menu
     }
-      .map({
-        case results: RequestSuccess[IndexResponse] => menu
-      })
   }
 
 

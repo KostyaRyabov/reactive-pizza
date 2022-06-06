@@ -2,14 +2,13 @@ package ru.misis.cart.service
 
 import akka.Done
 import akka.actor.ActorSystem
-import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.ElasticDsl.{matchQuery, _}
 import com.sksamuel.elastic4s.requests.indexes.IndexResponse
-import com.sksamuel.elastic4s.requests.indexes.admin.IndexExistsResponse
 import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
-import ru.misis.cart.model.{CartCommands, CartSettings}
 import ru.misis.cart.model.CartJsonFormats._
+import ru.misis.cart.model.{CartCommands, CartSettings}
 import ru.misis.elastic.Menu.menuHitReader
 import ru.misis.event.Cart._
 import ru.misis.event.EventJsonFormats.{orderConfirmedJsonFormat, orderFormedJsonFormat}
@@ -28,7 +27,7 @@ class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
 
   logger.info(s"Cart server initializing ...")
 
-  initElastic("item")(
+  initElastic("cart")(
     properties(
       keywordField("id"),
       keywordField("cartId"),
@@ -76,7 +75,7 @@ class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
   override def getCart(
                         cartId: String,
                       ): Future[CartInfo] = {
-    logger.info(s"Getting chart $cartId..")
+    logger.info(s"Getting cart $cartId..")
 
     elastic
       .execute(search("cart").query(matchQuery("cartId", cartId)))
@@ -94,7 +93,7 @@ class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
     logger.info(s"Deletion cart $cartId..")
 
     elastic
-      .execute(deleteByQuery("cart", matchQuery("cartId", cartId)))
+      .execute(deleteByQuery("cart", boolQuery.should(matchQuery("cartId", cartId))))
       .map(_ => Done)
   }
 
@@ -105,18 +104,38 @@ class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
       Future.failed(throw new Exception("Quantity of item is non-positive!"))
     } else {
       getItemInfo(item) { itemInfo =>
-        logger.info(s"Adding item to chart ${itemInfo.cartId}:${itemInfo.itemId}..")
+        logger.info(s"Adding item to cart ${itemInfo.cartId}:${itemInfo.itemId}..")
 
-        elastic.execute(
-          indexInto("cart")
-            .fields(
-              "id" -> itemInfo.itemId,
-              "cartId" -> itemInfo.cartId,
+        for {
+          numOpt <- elastic.execute(search("cart").query(
+            boolQuery.must(
+              multiMatchQuery(item.itemId),
+              multiMatchQuery(item.cartId),
             )
-            .doc(itemInfo)
-        ).map({
-          case request: RequestSuccess[IndexResponse] => itemInfo
-        })
+          )).map({ case results: RequestSuccess[SearchResponse] =>
+            results.result.to[ItemData].headOption.map(_.amount)
+          })
+          result <- {
+            numOpt match {
+              case Some(num) =>
+                updateItem(item.copy(amount = itemInfo.amount + num))
+                  .map(_ => itemInfo.copy(amount = itemInfo.amount + num))
+              case _ =>
+                elastic.execute(
+                  indexInto("cart")
+                    .fields(
+                      "id" -> itemInfo.itemId,
+                      "cartId" -> itemInfo.cartId,
+                    )
+                    .doc(itemInfo)
+                ).map({
+                  case request: RequestSuccess[IndexResponse] => itemInfo
+                })
+            }
+          }
+        } yield {
+          result
+        }
       }
     }
   }
@@ -129,9 +148,9 @@ class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
 
     for {
       result <- elastic.execute(
-        deleteByQuery("cart", boolQuery().should(
-          matchQuery("id", itemId),
-          matchQuery("cartId", cartId),
+        deleteByQuery("cart", boolQuery.must(
+          multiMatchQuery(itemId),
+          multiMatchQuery(cartId),
         ))
       ).map(_ => Done)
     } yield result
@@ -141,9 +160,9 @@ class CartCommandsImpl(val elastic: ElasticClient, val settings: CartSettings)
     logger.info(s"Updating item on cart ${item.cartId}:${item.itemId}..")
 
     elastic.execute(
-      updateByQuery("cart", boolQuery().should(
-        matchQuery("id", item.itemId),
-        matchQuery("cartId", item.cartId),
+      updateByQuery("cart", boolQuery().must(
+        multiMatchQuery(item.itemId),
+        multiMatchQuery(item.cartId),
       ))
         .script(
           Script("ctx._source.amount=params.amount;")

@@ -12,9 +12,9 @@ import scala.concurrent.Future
 trait KitchenCommands {
   val chef: ActorRef[Chef.Command]
 
-  def getState(itemId: String, orderId: String): Future[State]
-
   def getRouteItem(itemId: String): Future[RouteItem]
+
+  def getRouteCard: Future[Seq[RouteItem]]
 
   def saveRouteCard(routeCard: Seq[RouteItem]): Future[Seq[RouteItem]]
 

@@ -2,15 +2,12 @@ package ru.misis.payment.service
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.Source
-import com.sksamuel.elastic4s.ElasticApi.properties
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.requests.get.GetResponse
+import com.sksamuel.elastic4s.ElasticApi.{dateField, doubleField, indexInto, keywordField, matchQuery, properties, search}
+import com.sksamuel.elastic4s.ElasticDsl.{IndexHandler, SearchHandler}
+import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
 import com.sksamuel.elastic4s.requests.indexes.IndexResponse
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
-import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
 import ru.misis.event.Cart._
-import ru.misis.event.CartCreated
 import ru.misis.event.EventJsonFormats.paymentConfirmedJsonFormat
 import ru.misis.event.Payment.PaymentConfirmed
 import ru.misis.payment.model.PaymentJsonFormats._
@@ -41,26 +38,22 @@ class PaymentCommandsImpl(val elastic: ElasticClient, val settings: PaymentSetti
 
   private def calculatePrice(item: ItemInfo): Double = item.price * item.amount
 
-  override def confirm: CartCreated => Future[Done] = {
-    case CartCreated(cart) =>
-      val payment = Payment(
-        id = cart.id,
-        price = calculatePrice(cart),
-      )
+  override def confirmCart(cart: CartInfo): Future[Done] = {
+    val payment = Payment(
+      id = cart.id,
+      price = calculatePrice(cart),
+    )
 
-      logger.info(s"Payment#${payment.id}: ${payment.datetime} ...")
+    logger.info(s"Payment#${payment.id}: ${payment.datetime} ...")
 
-      for {
-        _ <- elastic.execute {
-          indexInto("payment").doc(payment)
-        }
-          .map({
-            case results: RequestSuccess[IndexResponse] =>
-              logger.info(s"Payment created: ${payment.toJson.prettyPrint}")
-          })
-        result <- Source.single(PaymentConfirmed(payment.id))
-          .runWith(kafkaSink[PaymentConfirmed])
-      } yield result
+    for {
+      _ <- elastic.execute(indexInto("payment").doc(payment))
+        .map({
+          case results: RequestSuccess[IndexResponse] =>
+            logger.info(s"Payment created: ${payment.toJson.prettyPrint}")
+        })
+      result <- publishEvent(PaymentConfirmed(payment.id))
+    } yield result
   }
 
   override def getList: Future[Seq[Payment]] = {
@@ -70,9 +63,7 @@ class PaymentCommandsImpl(val elastic: ElasticClient, val settings: PaymentSetti
   }
 
   override def getPayment(id: String): Future[Payment] = {
-    elastic.execute(get("payment", id))
-      .map {
-        case results: RequestSuccess[GetResponse] => results.result.to[Payment]
-      }
+    elastic.execute(search("payment").query(matchQuery("id", id)))
+      .map({ case results: RequestSuccess[SearchResponse] => results.result.to[Payment].head })
   }
 }

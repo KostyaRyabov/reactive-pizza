@@ -19,18 +19,21 @@ trait WithElasticInit extends WithLogger {
   def initElastic(name: String)(mapping: MappingDefinition): Unit = {
     logger.info(s"Init elastic index '$name' ...")
 
-    elastic.execute(indexExists(name)).map {
+    elastic.execute(indexExists(name)).map({
       case response: RequestSuccess[IndexExistsResponse] if !response.result.isExists || settings.clearElastic =>
         for {
-          _ <- elastic.execute(deleteIndex(name))
-          _ <- elastic.execute(createIndex(name).mapping(mapping))
+          _ <- elastic.execute(deleteIndex(name)).map(s => logger.info(s"Elastic index '$name': ${s.toString}"))
+          _ <- elastic.execute(createIndex(name).mapping(mapping)).map(s => logger.info(s"Elastic index '$name': ${s.toString}"))
         } yield {
           if (response.result.isExists) {
-            logger.info(s"Elastic index $name was cleared!")
+            logger.info(s"Elastic index '$name' was cleared!")
           } else {
-            logger.info(s"Elastic index $name was created!")
+            logger.info(s"Elastic index '$name' was created!")
           }
         }
-    }
+      case response: RequestSuccess[IndexExistsResponse] =>
+        logger.info(s"Elastic index '$name' already exists!")
+      case ex => logger.info(s"Elastic index '$name' failed: $ex")
+    })
   }
 }

@@ -27,7 +27,7 @@ object EventJsonFormats {
   implicit val paymentConfirmedJsonFormat = jsonFormat1(PaymentConfirmed)
 
   implicit val orderItemDataJsonFormat = jsonFormat5(Order.ItemData)
-  implicit val orderItemJsonFormat = jsonFormat3(Order.Item.apply)
+  implicit val orderItemJsonFormat = jsonFormat4(Order.Item.apply)
   implicit val orderDataJsonFormat = jsonFormat2(OrderData)
   implicit val orderJsonFormat = jsonFormat2(Order.apply)
 

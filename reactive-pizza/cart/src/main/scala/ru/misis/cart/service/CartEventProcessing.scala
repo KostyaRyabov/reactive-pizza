@@ -10,8 +10,7 @@ import ru.misis.util.{StreamHelper, WithKafka, WithLogger}
 import scala.concurrent.ExecutionContext
 
 class CartEventProcessing(cartService: CartCommands)
-                         (implicit executionContext: ExecutionContext,
-                          override val system: ActorSystem)
+                         (implicit executionContext: ExecutionContext, val system: ActorSystem)
   extends WithKafka
     with WithLogger
     with StreamHelper {

@@ -11,13 +11,14 @@ import ru.misis.kitchen.service.Chef.TakeItem
 import ru.misis.util.{WithKafka, WithLogger}
 
 class KitchenEventProcessing(service: KitchenCommands)
-                            (implicit override val system: ActorSystem)
+                            (implicit val system: ActorSystem)
   extends WithKafka
     with WithLogger {
 
   logger.info("Kitchen Event Processing Initializing ...")
 
   kafkaSource[OrderSubmitted]
+    .wireTap(order => logger.info(s"Order#${order.items.headOption.map(_.id).getOrElse("?")} is submitted!"))
     .map(_.items.map(item => service.chef ! TakeItem(item)))
     .runWith(Sink.ignore)
 

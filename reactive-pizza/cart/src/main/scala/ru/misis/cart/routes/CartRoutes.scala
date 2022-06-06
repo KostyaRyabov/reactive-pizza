@@ -31,33 +31,33 @@ class CartRoutes(cartService: CartCommands) {
             case Right(item) =>
               complete((StatusCodes.OK, item))
           }
+        }
+    } ~
+      pathPrefix("cart" / Segment) { cartId =>
+        path("item" / Segment) { itemId =>
+          delete {
+            onSuccess(cartService.deleteItem(itemId, cartId)) { _ =>
+              complete(StatusCodes.OK)
+            }
+          }
         } ~
-        pathPrefix(Segment) { cartId =>
-          pathPrefix("pay") {
-            get {
-              onSuccess(cartService.pay(cartId)) { _ =>
-                complete(StatusCodes.OK)
-              }
+          get {
+            onSuccess(cartService.getCart(cartId)) { cartInfo =>
+              complete((StatusCodes.OK, cartInfo))
             }
           } ~
-            pathPrefix("items" / Segment) { itemId =>
-              delete {
-                onSuccess(cartService.deleteItem(itemId, cartId)) { _ =>
-                  complete(StatusCodes.OK)
-                }
-              }
-            } ~
-            get {
-              onSuccess(cartService.getCart(cartId)) { cartInfo =>
-                complete((StatusCodes.OK, cartInfo))
-              }
-            } ~
-            delete {
-              onSuccess(cartService.deleteCart(cartId)) { _ =>
-                complete(StatusCodes.OK)
-              }
+          delete {
+            onSuccess(cartService.deleteCart(cartId)) { _ =>
+              complete(StatusCodes.OK)
             }
+          }
+      } ~
+      path("pay" / Segment) { cartId =>
+        get {
+          onSuccess(cartService.pay(cartId)) { _ =>
+            complete(StatusCodes.OK)
+          }
         }
-    }
+      }
   }
 }

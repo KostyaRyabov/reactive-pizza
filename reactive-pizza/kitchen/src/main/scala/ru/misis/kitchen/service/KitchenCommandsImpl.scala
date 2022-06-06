@@ -4,17 +4,16 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.typed.scaladsl.adapter.ClassicActorSystemOps
 import akka.actor.typed.scaladsl.{Behaviors, Routers}
-import akka.actor.typed.{ActorRef, SupervisorStrategy}
+import akka.actor.typed.{ActorRef, DispatcherSelector, SupervisorStrategy}
 import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
-import com.sksamuel.elastic4s.requests.update.UpdateResponse
+import com.sksamuel.elastic4s.requests.update.UpdateByQueryResponse
 import com.sksamuel.elastic4s.{ElasticClient, RequestSuccess}
-import ru.misis.elastic.Order._
 import ru.misis.elastic.RouteCard._
 import ru.misis.event.EventJsonFormats.itemStateUpdatedJsonFormat
 import ru.misis.event.Menu.RouteItem
 import ru.misis.event.Order.ItemData
-import ru.misis.event.State.State
 import ru.misis.event.{ItemStateUpdated, Order}
 import ru.misis.kitchen.model.{KitchenCommands, KitchenSettings}
 import ru.misis.util.{WithElasticInit, WithKafka, WithLogger}
@@ -30,12 +29,15 @@ class KitchenCommandsImpl(val elastic: ElasticClient, val settings: KitchenSetti
 
   logger.info(s"Kitchen server initializing...")
 
-  private val chefPool = Routers.pool(poolSize = 3) {
+  private val chefPool = Routers.pool(poolSize = settings.chefInstancesNum) {
     Behaviors.supervise(Chef(this)).onFailure[Exception](SupervisorStrategy.restart)
   }
+    .withRoundRobinRouting()
+    .withRouteeProps(routeeProps = DispatcherSelector.blocking())
+
   override val chef: ActorRef[Chef.Command] = system.spawn(chefPool, "chef-pool")
 
-  initElastic("routeCard")(
+  initElastic("route_card")(
     properties(
       keywordField("itemId"),
       nestedField("routeStages").properties(
@@ -54,44 +56,45 @@ class KitchenCommandsImpl(val elastic: ElasticClient, val settings: KitchenSetti
     logger.info(s"Route Card updating...")
 
     for {
-      _ <- elastic.execute {
-        deleteByQuery("routeCard", matchAllQuery())
-      }
-      _ <- elastic.execute {
-        bulk(routeCard.map(indexInto("routeCard").doc(_)))
-      }
-    } yield routeCard
+      _ <- elastic.execute(deleteByQuery("route_card", matchAllQuery()))
+      _ <- elastic.execute(bulk(routeCard.map(indexInto("route_card").doc(_))))
+    } yield {
+      logger.info(s"Route Card is created!")
+      routeCard
+    }
   }
 
-  override def getRouteItem(itemId: String): Future[RouteItem] = {
-    elastic.execute {
-      search("routeCard").matchQuery("itemId", itemId)
-    }
-      .map {
-        case results: RequestSuccess[SearchResponse] => results.result.to[RouteItem].head
-      }
+  override def getRouteCard: Future[Seq[RouteItem]] = {
+    elastic.execute(search("route_card").query(matchAllQuery()))
+      .map({ case results: RequestSuccess[SearchResponse] => results.result.to[RouteItem] })
+  }
+
+  override def getRouteItem(menuItemId: String): Future[RouteItem] = {
+    logger.info(s"Getting routeItem#$menuItemId ...")
+
+    elastic.execute(search("route_card").query(matchQuery("itemId", menuItemId)))
+      .map({ case results: RequestSuccess[SearchResponse] => results.result.to[RouteItem].head })
   }
 
   private def updateItemState(item: ItemData): Future[ItemData] = {
-    elastic.execute(updateById("orders", item.id).doc(item))
-      .map({ case response: RequestSuccess[UpdateResponse] => item })
-  }
+    logger.info(s"Updating item#${item.orderId}:${item.menuItemId} state to '${item.state}' ...")
 
-  private def getOrderItem(itemId: String, orderId: String): Future[ItemData] = {
-    elastic.execute(search("orders").query(
-      must(
-        matchQuery("orderId", orderId),
-        matchQuery("menuItemId", itemId),
-      )
-    ))
-      .map({ case results: RequestSuccess[SearchResponse] => results.result.to[ItemData].head })
-  }
-
-  override def getState(itemId: String, orderId: String): Future[State] = {
-    getOrderItem(itemId, orderId).map(_.state)
+    elastic.execute(
+      updateByQuery("orders", boolQuery().must(matchQuery("id", item.id)))
+        .script(
+          Script("ctx._source.state=params.state;")
+            .params(Map("state" -> item.state))
+            .lang("painless")
+        )
+    ).map({
+      case response: RequestSuccess[UpdateByQueryResponse] => item
+      case ex => throw new Exception(s"Error submitting! ${ex.toString}")
+    })
   }
 
   override def submit(item: Order.ItemData): Future[Done] = {
+    logger.info(s"Submit item#${item.id} [${item.state}]")
+
     updateItemState(item)
       .flatMap(_ => publishEvent(ItemStateUpdated(item)))
   }

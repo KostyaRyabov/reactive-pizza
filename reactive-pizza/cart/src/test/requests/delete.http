@@ -1,0 +1,33 @@
+###
+DELETE http://localhost:8081/cart/6fcb2add-a51e-4a27-80d4-178f5ab2de3e/item/d6eb8dcb-d9e1-429d-a334-e8a589bef075
+Content-Type: application/json
+
+###
+GET http://localhost:8081/cart/6fcb2add-a51e-4a27-80d4-178f5ab2de3e
+Content-Type: application/json
+
+###
+DELETE http://localhost:8081/cart/6fcb2add-a51e-4a27-80d4-178f5ab2de3e
+Content-Type: application/json
+
+
+
+
+
+
+###
+POST http://localhost:8081/carts
+Content-Type: application/json
+
+{
+"itemId": "e276ebc8-454e-42c4-aecf-1107243b83d9",
+"amount": 2
+}
+
+###
+DELETE http://localhost:8081/cart/503434ee-626d-4dc2-bb95-10b9a04d07bf
+Content-Type: application/json
+
+###
+GET http://localhost:8081/cart/503434ee-626d-4dc2-bb95-10b9a04d07bf
+Content-Type: application/json

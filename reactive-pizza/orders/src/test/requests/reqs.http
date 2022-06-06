@@ -1,0 +1,19 @@
+
+###
+GET http://localhost:8083/orders
+Content-Type: application/json
+
+###
+GET http://localhost:8083/order/6fcb2add-a51e-4a27-80d4-178f5ab2de3e
+Content-Type: application/json
+
+
+###
+GET http://localhost:8083/state/6fcb2add-a51e-4a27-80d4-178f5ab2de3e
+Content-Type: application/json
+
+
+
+###
+GET http://localhost:8083/state/non-order
+Content-Type: application/json

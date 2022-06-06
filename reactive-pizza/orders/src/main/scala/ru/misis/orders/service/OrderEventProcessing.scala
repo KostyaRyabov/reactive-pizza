@@ -1,39 +1,53 @@
 package ru.misis.orders.service
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorAttributes, Supervision}
 import akka.stream.scaladsl.Sink
 import ru.misis.event.EventJsonFormats._
-import ru.misis.event.{CartConfirmed, ItemStateUpdated, State}
+import ru.misis.event.{CartConfirmed, ItemStateUpdated}
 import ru.misis.orders.model.OrderCommands
 import ru.misis.orders.service.Waiter.{ReturnOrder, TakeOrder}
 import ru.misis.util.{WithKafka, WithLogger}
+import spray.json.enrichAny
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+
+case class IsNotReady(msg: String) extends Exception(msg)
 
 class OrderEventProcessing(service: OrderCommands)
-                          (implicit override val system: ActorSystem, ec: ExecutionContext)
+                          (implicit val system: ActorSystem, ec: ExecutionContext)
   extends WithKafka
     with WithLogger {
 
   logger.info("Order Event Processing Initializing ...")
 
-//  val decider: Supervision.Decider = {
-//    case _: NoSuchElementException => Supervision.Resume
-//    case _ => Supervision.Stop
-//  }
-
   kafkaSource[CartConfirmed]
-    .wireTap(_ => logger.info("Cart confirmed!"))
+    .map(event => {
+      logger.info(s"Cart confirmed! ${event.data.toJson.prettyPrint}")
+      event
+    })
     .map(order => service.waiter ! TakeOrder(order.data))
     .runWith(Sink.ignore)
 
   kafkaSource[ItemStateUpdated]
-//    .withAttributes(ActorAttributes.supervisionStrategy(decider))
-    .mapAsync(1)({ case ItemStateUpdated(item) if item.isReady =>
-      service.getOrder(item.orderId)
-        .filter(order => order.isReady)
-        .map(order => service.waiter ! ReturnOrder(order))
+    .map(event => {
+      logger.info(s"Item#${event.item.orderId}:${event.item.menuItemId} State Updated! ${event.item.state} [${event.item.isReady}]")
+      event
+    })
+    .mapAsync(1)({
+      case ItemStateUpdated(item) if item.isReady =>
+        logger.info(s"ItemStateUpdated ${item.id} - READY!!!")
+        Thread.sleep(1000)
+        service.getOrder(item.orderId).map(orderOps =>
+          {
+            logger.info(s"orderOps ${orderOps.map(_.id)} - ${orderOps.map(_.getItemsSumState)}!!!")
+
+            orderOps.filter(_.isReady).map(order =>
+              service.waiter ! ReturnOrder(order)
+            )
+          }
+        )
+      case ItemStateUpdated(item) =>
+        Future.successful(logger.info(s"Item#${item.orderId}:${item.menuItemId} is not ready!"))
     })
     .runWith(Sink.ignore)
 }

@@ -11,7 +11,9 @@ import scala.concurrent.Future
 trait OrderCommands {
   val waiter: ActorRef[Waiter.Command]
 
-  def getOrder(orderId: String): Future[Order]
+  def getOrders: Future[Seq[OrderData]]
+
+  def getOrder(orderId: String): Future[Option[Order]]
 
   def getOrderState(orderId: String): Future[State]
 

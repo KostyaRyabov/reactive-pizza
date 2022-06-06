@@ -14,6 +14,7 @@ object Order {
   }
 
   case class Item(
+                   id: String = UUID.randomUUID().toString,
                    menuItemId: String,
                    name: String,
                    state: State = State.InWait,
@@ -21,7 +22,7 @@ object Order {
     extends ItemLike
 
   case class ItemData(
-                       id: String = UUID.randomUUID().toString,
+                       id: String,
                        orderId: String,
                        menuItemId: String,
                        name: String,
