@@ -23,3 +23,50 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-pizza:2181'
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
+  menu:
+    build:
+      dockerfile: ./menu/Dockerfile
+      context: ../
+    environment:
+      CLEAR_ELASTIC: "false"
+      KAFKA: 127.0.0.1:9092
+    ports:
+      - 8080:8080
+  cart: 
+    build:
+      dockerfile: ./cart/Dockerfile
+      context: ../
+    environment:
+      CLEAR_ELASTIC: "false"
+      KAFKA: 127.0.0.1:9092
+    ports:
+      - 8081:8081
+  payment: 
+    build:
+      dockerfile: ./payment/Dockerfile
+      context: ../
+    environment:
+      CLEAR_ELASTIC: "false"
+      KAFKA: 127.0.0.1:9092
+    ports:
+      - 8082:8082
+  orders: 
+    build:
+      dockerfile: ./orders/Dockerfile
+      context: ../
+    environment:
+      CLEAR_ELASTIC: "false"
+      KAFKA: 127.0.0.1:9092
+      WAITER_INSTANCES_NUM: 2
+    ports:
+      - 8083:8083
+  kitchen: 
+    build:
+      dockerfile: ./kitchen/Dockerfile
+      context: ../
+    environment:
+      CLEAR_ELASTIC: "false"
+      KAFKA: 127.0.0.1:9092
+      CHEF_INSTANCES_NUM: 4
+    ports:
+      - 8084:8084
