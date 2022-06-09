@@ -1,3 +1,4 @@
+
 lazy val akkaVersion = "2.6.19"
 lazy val akkaHttpVersion = "10.2.9"
 
